@@ -2,7 +2,7 @@ use figlet_rs::FIGlet;
 use ratatui::{
     layout::{Alignment, Constraint, Direction, Layout, Rect},
     style::{Color, Style},
-    widgets::{Block, Borders, Paragraph},
+    widgets::{Block, BorderType, Borders, Paragraph},
     Frame,
 };
 
@@ -15,10 +15,11 @@ pub struct UiData<'a> {
     pub clock_color: Color,
     pub show_panel: bool,
     pub panel_ratio: u8,
-    pub panel_bg_color: Color,
-    pub panel_fg_color: Color,
-    pub panel_border_color: Color,
-    pub panel_border_type: Borders,
+    pub panel_bg: Color,
+    pub panel_fg: Color,
+    pub panel_border: Color,
+    pub panel_border_sides: Borders,
+    pub panel_border_style: BorderType,
 }
 
 pub fn draw(f: &mut Frame, data: &UiData) {
@@ -102,13 +103,10 @@ pub fn draw(f: &mut Frame, data: &UiData) {
     if let Some(panel_area) = panel_area {
         let panel_block = Block::default()
             .title("Panel")
-            .borders(data.panel_border_type)
-            .style(
-                Style::default()
-                    .fg(data.panel_fg_color)
-                    .bg(data.panel_bg_color),
-            )
-            .border_style(Style::default().fg(data.panel_border_color));
+            .borders(data.panel_border_sides)
+            .border_type(data.panel_border_style)
+            .style(Style::default().fg(data.panel_fg).bg(data.panel_bg))
+            .border_style(Style::default().fg(data.panel_border));
         f.render_widget(panel_block, panel_area);
     }
 

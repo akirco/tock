@@ -34,17 +34,21 @@ pub struct Cli {
 
     /// Panel background color (e.g., black, "#1e1e1e", reset)
     #[arg(long)]
-    pub panel_bg_color: Option<String>,
+    pub panel_bg: Option<String>,
 
     /// Panel foreground/text color (e.g., cyan, "#00ff00", white)
     #[arg(long)]
-    pub panel_fg_color: Option<String>,
+    pub panel_fg: Option<String>,
 
     /// Panel border color (e.g., cyan, "#00ff00", white)
     #[arg(long)]
-    pub panel_border_color: Option<String>,
+    pub panel_border: Option<String>,
 
-    /// Panel border type: none, all, left, right, top, bottom, horizontal, vertical (default: all)
+    /// Panel border sides: none, all, left, right, top, bottom, horizontal, vertical (default: all)
     #[arg(long)]
-    pub panel_border_type: Option<String>,
+    pub panel_border_sides: Option<String>,
+
+    /// Panel border style: plain, rounded, double, thick (default: plain)
+    #[arg(long)]
+    pub panel_border_style: Option<String>,
 }
