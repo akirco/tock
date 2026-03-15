@@ -19,10 +19,6 @@ pub struct Config {
 }
 
 pub fn load_config() -> Config {
-    // Automatically match the OS-specific configuration directory:
-    // Linux: ~/.config/clock/config.toml
-    // macOS: ~/Library/Application Support/clock/config.toml
-    // Windows: C:\Users\Username\AppData\Roaming\clock\config\config.toml
     if let Some(proj_dirs) = ProjectDirs::from("", "", "clock") {
         let config_file = proj_dirs.config_dir().join("config.toml");
         if config_file.exists()
@@ -31,5 +27,5 @@ pub fn load_config() -> Config {
                     return config;
                 }
     }
-    Config::default() // Return default empty config if file doesn't exist or parsing fails
+    Config::default()
 }

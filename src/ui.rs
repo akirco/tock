@@ -2,9 +2,11 @@ use figlet_rs::FIGlet;
 use ratatui::{
     layout::{Alignment, Constraint, Direction, Layout, Rect},
     style::{Color, Style},
-    widgets::{Block, BorderType, Borders, Paragraph},
+    widgets::{Block, BorderType, Borders, Paragraph, Row, Table, TableState},
     Frame,
 };
+
+use crate::app::{AppMode, EditMode};
 
 pub struct UiData<'a> {
     pub font: &'a FIGlet,
@@ -21,6 +23,13 @@ pub struct UiData<'a> {
     pub panel_border_sides: Borders,
     pub panel_border_style: BorderType,
     pub panel_title: &'a str,
+    // Table data
+    pub mode: AppMode,
+    pub items: &'a [Vec<String>],
+    pub headers: &'a [&'static str],
+    pub table_state: &'a mut TableState,
+    pub edit_mode: &'a EditMode,
+    pub input_buffer: &'a str,
 }
 
 fn build_layout(area: Rect, show_panel: bool, panel_ratio: u8) -> (Rect, Option<Rect>) {
@@ -71,7 +80,7 @@ fn build_layout(area: Rect, show_panel: bool, panel_ratio: u8) -> (Rect, Option<
     }
 }
 
-pub fn draw(f: &mut Frame, data: &UiData) {
+pub fn draw(f: &mut Frame, data: &mut UiData) {
     let area = f.area();
 
     // 1. Draw global background
@@ -99,7 +108,6 @@ pub fn draw(f: &mut Frame, data: &UiData) {
 
     f.render_widget(center_paragraph, content_area);
 
-    // 5. Draw panel (if visible)
     if let Some(panel_area) = panel_area {
         let panel_block = Block::default()
             .title(data.panel_title)
@@ -109,6 +117,8 @@ pub fn draw(f: &mut Frame, data: &UiData) {
             .style(Style::default().fg(data.panel_fg).bg(data.panel_bg))
             .border_style(Style::default().fg(data.panel_border));
         f.render_widget(panel_block, panel_area);
+
+        draw_table(f, panel_area, data);
     }
 
     // 6. Draw footer hints (always at bottom)
@@ -118,4 +128,91 @@ pub fn draw(f: &mut Frame, data: &UiData) {
         .alignment(Alignment::Right);
 
     f.render_widget(footer_paragraph, footer_area);
+}
+
+fn draw_table(f: &mut Frame, area: Rect, data: &mut UiData) {
+    let inner = Rect::new(area.x + 1, area.y + 1, area.width - 2, area.height - 2);
+
+    let chunks = Layout::default()
+        .direction(Direction::Vertical)
+        .constraints([Constraint::Min(0), Constraint::Length(1)])
+        .split(inner);
+
+    let header = Row::new(
+        data.headers
+            .iter()
+            .map(|s| s.to_string())
+            .collect::<Vec<_>>(),
+    )
+    .style(Style::new().bold())
+    .bottom_margin(1);
+
+    let (sel_r, sel_c) = (
+        data.table_state.selected(),
+        data.table_state.selected_column(),
+    );
+    let is_typing = matches!(data.edit_mode, EditMode::Typing { .. });
+
+    let col_count = data.headers.len();
+    let widths: Vec<Constraint> = (0..col_count)
+        .map(|_| Constraint::Percentage(100 / col_count as u16))
+        .collect();
+
+    let rows: Vec<Row> = data
+        .items
+        .iter()
+        .enumerate()
+        .map(|(r_idx, item)| {
+            let cells: Vec<String> = item
+                .iter()
+                .enumerate()
+                .map(|(c_idx, s)| {
+                    if is_typing && Some(r_idx) == sel_r && Some(c_idx) == sel_c {
+                        format!("{}█", data.input_buffer)
+                    } else {
+                        s.clone()
+                    }
+                })
+                .collect();
+            Row::new(cells)
+        })
+        .collect();
+
+    let cell_style = if is_typing {
+        Style::new().reversed().light_blue()
+    } else {
+        Style::new().reversed().dark_gray()
+    };
+
+    let table = Table::new(rows, widths)
+        .header(header)
+        .column_spacing(1)
+        .style(Color::White)
+        .row_highlight_style(Style::new().on_black().bold())
+        .cell_highlight_style(cell_style)
+        .highlight_symbol("❱ ");
+
+    f.render_stateful_widget(table, chunks[0], data.table_state);
+
+    let help_text = match data.edit_mode {
+        EditMode::Normal => {
+            if data.mode == AppMode::Stopwatch {
+                " 'd' Delete | ↑↓←→ Navigate | g/G First/Last "
+            } else {
+                " 'a' Add | 'e' Edit | 'd' Delete | ↑↓←→ Navigate | g/G First/Last "
+            }
+        }
+        EditMode::Typing { is_new_row: true } => {
+            " [Adding] Enter: next field | Esc: abort | Space: toggle "
+        }
+        EditMode::Typing { is_new_row: false } => {
+            " [Editing] Enter: save | Esc: cancel | Space: toggle "
+        }
+    };
+
+    let help_widget = Paragraph::new(help_text)
+        .style(Style::default().fg(Color::DarkGray))
+        .alignment(Alignment::Center);
+
+    f.render_widget(help_widget, chunks[1]);
 }
