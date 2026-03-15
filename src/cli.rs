@@ -3,7 +3,7 @@ use clap::Parser;
 /// A terminal ASCII digital clock and timer
 #[derive(Parser, Debug)]
 #[command(
-    name = "clock",
+    name = "tock",
     version,
     about = "A terminal ASCII digital clock and timer"
 )]
