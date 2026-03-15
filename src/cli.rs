@@ -29,6 +29,22 @@ pub struct Cli {
     pub clock_color: Option<String>,
 
     /// Panel height ratio when visible (0-100, default 50)
-    #[arg(short = 'p', long)]
+    #[arg(long)]
     pub panel_ratio: Option<u8>,
+
+    /// Panel background color (e.g., black, "#1e1e1e", reset)
+    #[arg(long)]
+    pub panel_bg_color: Option<String>,
+
+    /// Panel foreground/text color (e.g., cyan, "#00ff00", white)
+    #[arg(long)]
+    pub panel_fg_color: Option<String>,
+
+    /// Panel border color (e.g., cyan, "#00ff00", white)
+    #[arg(long)]
+    pub panel_border_color: Option<String>,
+
+    /// Panel border type: none, all, left, right, top, bottom, horizontal, vertical (default: all)
+    #[arg(long)]
+    pub panel_border_type: Option<String>,
 }

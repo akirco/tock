@@ -10,6 +10,10 @@ pub struct Config {
     pub bg_color: Option<String>,
     pub clock_color: Option<String>,
     pub panel_ratio: Option<u8>,
+    pub panel_bg_color: Option<String>,
+    pub panel_fg_color: Option<String>,
+    pub panel_border_color: Option<String>,
+    pub panel_border_type: Option<String>,
 }
 
 pub fn load_config() -> Config {

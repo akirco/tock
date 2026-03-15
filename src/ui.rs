@@ -2,7 +2,7 @@ use figlet_rs::FIGlet;
 use ratatui::{
     layout::{Alignment, Constraint, Direction, Layout, Rect},
     style::{Color, Style},
-    widgets::{Block, Paragraph},
+    widgets::{Block, Borders, Paragraph},
     Frame,
 };
 
@@ -15,6 +15,10 @@ pub struct UiData<'a> {
     pub clock_color: Color,
     pub show_panel: bool,
     pub panel_ratio: u8,
+    pub panel_bg_color: Color,
+    pub panel_fg_color: Color,
+    pub panel_border_color: Color,
+    pub panel_border_type: Borders,
 }
 
 pub fn draw(f: &mut Frame, data: &UiData) {
@@ -48,7 +52,6 @@ pub fn draw(f: &mut Frame, data: &UiData) {
         let panel_area = outer_chunks[1];
 
         // Step 2: Center content in content_container
-        // Split into: top_space (flexible) + content (Min to fit) + bottom_space (flexible)
         let container_height = content_container.height as usize;
         let content_needed = 10; // ASCII art ~6-8 lines + subtitle ~2 lines
 
@@ -99,8 +102,13 @@ pub fn draw(f: &mut Frame, data: &UiData) {
     if let Some(panel_area) = panel_area {
         let panel_block = Block::default()
             .title("Panel")
-            .borders(ratatui::widgets::Borders::ALL)
-            .style(Style::default().fg(data.clock_color).bg(data.bg_color));
+            .borders(data.panel_border_type)
+            .style(
+                Style::default()
+                    .fg(data.panel_fg_color)
+                    .bg(data.panel_bg_color),
+            )
+            .border_style(Style::default().fg(data.panel_border_color));
         f.render_widget(panel_block, panel_area);
     }
 

@@ -7,7 +7,7 @@ use crossterm::{
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
 };
 use figlet_rs::FIGlet;
-use ratatui::{backend::CrosstermBackend, style::Color, Terminal};
+use ratatui::{backend::CrosstermBackend, style::Color, widgets::Borders, Terminal};
 use std::{io, str::FromStr, time::{Duration, Instant}};
 
 #[derive(PartialEq)]
@@ -169,6 +169,19 @@ fn parse_duration(s: &str) -> Duration {
     Duration::from_secs(total_secs)
 }
 
+fn parse_border_type(s: &str) -> Borders {
+    match s.to_lowercase().as_str() {
+        "none" => Borders::NONE,
+        "left" => Borders::LEFT,
+        "right" => Borders::RIGHT,
+        "top" => Borders::TOP,
+        "bottom" => Borders::BOTTOM,
+        "horizontal" => Borders::LEFT | Borders::RIGHT,
+        "vertical" => Borders::TOP | Borders::BOTTOM,
+        _ => Borders::ALL,
+    }
+}
+
 pub fn run() -> Result<(), io::Error> {
     let cli = Cli::parse();
     let config = load_config();
@@ -181,8 +194,18 @@ pub fn run() -> Result<(), io::Error> {
     let clock_color_str = cli.clock_color.or(config.clock_color).unwrap_or_else(|| "cyan".to_string());
     let panel_ratio = cli.panel_ratio.or(config.panel_ratio).unwrap_or(50);
 
+    // Panel styling
+    let panel_bg_color_str = cli.panel_bg_color.or(config.panel_bg_color).unwrap_or_else(|| "reset".to_string());
+    let panel_fg_color_str = cli.panel_fg_color.or(config.panel_fg_color).unwrap_or_else(|| "cyan".to_string());
+    let panel_border_color_str = cli.panel_border_color.or(config.panel_border_color).unwrap_or_else(|| "cyan".to_string());
+    let panel_border_type_str = cli.panel_border_type.or(config.panel_border_type).unwrap_or_else(|| "all".to_string());
+
     let bg_color = Color::from_str(&bg_color_str).unwrap_or(Color::Reset);
     let clock_color = Color::from_str(&clock_color_str).unwrap_or(Color::Cyan);
+    let panel_bg_color = Color::from_str(&panel_bg_color_str).unwrap_or(Color::Reset);
+    let panel_fg_color = Color::from_str(&panel_fg_color_str).unwrap_or(Color::Cyan);
+    let panel_border_color = Color::from_str(&panel_border_color_str).unwrap_or(Color::Cyan);
+    let panel_border_type = parse_border_type(&panel_border_type_str);
 
     // Initialize App state machine
     let mut app_state = AppState::new(stopwatch_choice, time_choice.as_ref());
@@ -221,6 +244,10 @@ pub fn run() -> Result<(), io::Error> {
             clock_color,
             show_panel: app_state.show_panel,
             panel_ratio,
+            panel_bg_color,
+            panel_fg_color,
+            panel_border_color,
+            panel_border_type,
         }))?;
 
         // Polling rate set to 50ms for smooth timer UI updates
