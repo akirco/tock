@@ -2,7 +2,11 @@ use clap::Parser;
 
 /// A terminal ASCII digital clock and timer
 #[derive(Parser, Debug)]
-#[command(name = "clock", version, about = "A terminal ASCII digital clock and timer")]
+#[command(
+    name = "clock",
+    version,
+    about = "A terminal ASCII digital clock and timer"
+)]
 pub struct Cli {
     /// Enable stopwatch mode
     #[arg(short = 's', long, conflicts_with = "time")]
@@ -23,4 +27,8 @@ pub struct Cli {
     /// Clock text color (e.g., cyan, "#00ff00", white)
     #[arg(short = 'c', long)]
     pub clock_color: Option<String>,
+
+    /// Panel height ratio when visible (0-100, default 50)
+    #[arg(short = 'p', long)]
+    pub panel_ratio: Option<u8>,
 }

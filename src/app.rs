@@ -179,6 +179,7 @@ pub fn run() -> Result<(), io::Error> {
     let font_choice = cli.font.or(config.font).unwrap_or_else(|| "standard".to_string());
     let bg_color_str = cli.bg_color.or(config.bg_color).unwrap_or_else(|| "reset".to_string());
     let clock_color_str = cli.clock_color.or(config.clock_color).unwrap_or_else(|| "cyan".to_string());
+    let panel_ratio = cli.panel_ratio.or(config.panel_ratio).unwrap_or(50);
 
     let bg_color = Color::from_str(&bg_color_str).unwrap_or(Color::Reset);
     let clock_color = Color::from_str(&clock_color_str).unwrap_or(Color::Cyan);
@@ -219,6 +220,7 @@ pub fn run() -> Result<(), io::Error> {
             bg_color,
             clock_color,
             show_panel: app_state.show_panel,
+            panel_ratio,
         }))?;
 
         // Polling rate set to 50ms for smooth timer UI updates

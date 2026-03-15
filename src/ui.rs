@@ -14,6 +14,7 @@ pub struct UiData<'a> {
     pub bg_color: Color,
     pub clock_color: Color,
     pub show_panel: bool,
+    pub panel_ratio: u8,
 }
 
 pub fn draw(f: &mut Frame, data: &UiData) {
@@ -25,39 +26,61 @@ pub fn draw(f: &mut Frame, data: &UiData) {
         area,
     );
 
-    // 2. Vertical centering layout - footer always at bottom
+    // 2. Vertical layout - footer always at bottom (1 row)
     let footer_height = 1;
-    let center_content_height = 10;
-
     let main_area_height = area.height.saturating_sub(footer_height);
     let main_area = Rect::new(area.x, area.y, area.width, main_area_height);
 
-    let vertical_chunks = if data.show_panel {
-        let remaining = main_area_height - center_content_height;
-        let panel_height = (remaining * 50) / 100;
-        let top_space = remaining - panel_height;
-
-        Layout::default()
+    // Split main area for vertical centering
+    let (content_area, panel_area) = if data.show_panel {
+        // Panel mode: two-step layout
+        // Step 1: Split main_area into content_container and panel_area
+        let panel_ratio = data.panel_ratio.clamp(1, 99) as u16;
+        let outer_chunks = Layout::default()
             .direction(Direction::Vertical)
             .constraints([
-                Constraint::Length(top_space),
-                Constraint::Length(center_content_height),
-                Constraint::Length(panel_height),
+                Constraint::Percentage(100 - panel_ratio), // content container
+                Constraint::Percentage(panel_ratio),       // panel
             ])
-            .split(main_area)
+            .split(main_area);
+
+        let content_container = outer_chunks[0];
+        let panel_area = outer_chunks[1];
+
+        // Step 2: Center content in content_container
+        // Split into: top_space (flexible) + content (Min to fit) + bottom_space (flexible)
+        let container_height = content_container.height as usize;
+        let content_needed = 10; // ASCII art ~6-8 lines + subtitle ~2 lines
+
+        let content_area = if container_height <= content_needed {
+            content_container
+        } else {
+            let remaining = container_height - content_needed;
+            let top_space = remaining / 2;
+
+            let inner_chunks = Layout::default()
+                .direction(Direction::Vertical)
+                .constraints([
+                    Constraint::Length(top_space as u16),
+                    Constraint::Length(content_needed as u16),
+                    Constraint::Length((remaining - top_space) as u16),
+                ])
+                .split(content_container);
+            inner_chunks[1]
+        };
+        (content_area, Some(panel_area))
     } else {
-        let remaining = main_area_height - center_content_height;
-        let top_space = remaining / 2;
-        let bottom_space = remaining - top_space;
-
-        Layout::default()
+        // No panel: create three equal sections for vertical centering
+        let third = main_area_height / 3;
+        let vertical_chunks = Layout::default()
             .direction(Direction::Vertical)
             .constraints([
-                Constraint::Length(top_space),
-                Constraint::Length(center_content_height),
-                Constraint::Length(bottom_space),
+                Constraint::Length(third),
+                Constraint::Length(third),
+                Constraint::Length(third),
             ])
-            .split(main_area)
+            .split(main_area);
+        (vertical_chunks[1], None)
     };
 
     // 3. Generate ASCII art
@@ -70,15 +93,15 @@ pub fn draw(f: &mut Frame, data: &UiData) {
         .style(Style::default().fg(data.clock_color).bg(data.bg_color))
         .alignment(Alignment::Center);
 
-    f.render_widget(center_paragraph, vertical_chunks[1]);
+    f.render_widget(center_paragraph, content_area);
 
     // 5. Draw panel (if visible)
-    if data.show_panel {
+    if let Some(panel_area) = panel_area {
         let panel_block = Block::default()
             .title("Panel")
             .borders(ratatui::widgets::Borders::ALL)
             .style(Style::default().fg(data.clock_color).bg(data.bg_color));
-        f.render_widget(panel_block, vertical_chunks[2]);
+        f.render_widget(panel_block, panel_area);
     }
 
     // 6. Draw footer hints (always at bottom)

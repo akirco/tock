@@ -9,6 +9,7 @@ pub struct Config {
     pub font: Option<String>,
     pub bg_color: Option<String>,
     pub clock_color: Option<String>,
+    pub panel_ratio: Option<u8>,
 }
 
 pub fn load_config() -> Config {
