@@ -208,8 +208,8 @@ pub fn run() -> Result<(), io::Error> {
     let panel_fg_str = cli.panel_fg.or(config.panel_fg).unwrap_or_else(|| "cyan".to_string());
     let panel_border_str = cli.panel_border.or(config.panel_border).unwrap_or_else(|| "cyan".to_string());
     let panel_border_sides_str = cli.panel_border_sides.or(config.panel_border_sides).unwrap_or_else(|| "all".to_string());
-    let panel_border_style_str = cli.panel_border_style.or(config.panel_border_style).unwrap_or_else(|| "plain".to_string());
-    let panel_title = cli.panel_title.or(config.panel_title).unwrap_or_else(|| "Panel".to_string());
+    let panel_border_style_str = cli.panel_border_style.or(config.panel_border_style).unwrap_or_else(|| "rounded".to_string());
+    let user_panel_title = cli.panel_title.or(config.panel_title);
 
     let bg_color = Color::from_str(&bg_str).unwrap_or(Color::Reset);
     let clock_color = Color::from_str(&fg_str).unwrap_or(Color::Cyan);
@@ -221,6 +221,14 @@ pub fn run() -> Result<(), io::Error> {
 
     // Initialize App state machine
     let mut app_state = AppState::new(stopwatch_choice, time_choice.as_ref());
+
+    // Default panel title based on mode
+    let default_title = match app_state.mode {
+        AppMode::Clock => "Alarm",
+        AppMode::Stopwatch => "Stopwatch",
+        AppMode::Countdown => "Timer",
+    };
+    let panel_title = user_panel_title.unwrap_or_else(|| default_title.to_string());
 
     let font = match font_choice.to_lowercase().as_str() {
         "standard" => FIGlet::standard().expect("Failed to load standard font"),
@@ -261,7 +269,7 @@ pub fn run() -> Result<(), io::Error> {
             panel_border,
             panel_border_sides,
             panel_border_style,
-            panel_title: panel_title.clone(),
+            panel_title: panel_title.as_str(),
         }))?;
 
         // Polling rate set to 50ms for smooth timer UI updates
