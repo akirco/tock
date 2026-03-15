@@ -15,6 +15,7 @@ pub struct Config {
     pub panel_border: Option<String>,
     pub panel_border_sides: Option<String>,
     pub panel_border_style: Option<String>,
+    pub panel_title: Option<String>,
 }
 
 pub fn load_config() -> Config {

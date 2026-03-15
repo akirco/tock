@@ -51,4 +51,8 @@ pub struct Cli {
     /// Panel border style: plain, rounded, double, thick (default: plain)
     #[arg(long)]
     pub panel_border_style: Option<String>,
+
+    /// Panel title text
+    #[arg(long)]
+    pub panel_title: Option<String>,
 }

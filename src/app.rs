@@ -209,6 +209,7 @@ pub fn run() -> Result<(), io::Error> {
     let panel_border_str = cli.panel_border.or(config.panel_border).unwrap_or_else(|| "cyan".to_string());
     let panel_border_sides_str = cli.panel_border_sides.or(config.panel_border_sides).unwrap_or_else(|| "all".to_string());
     let panel_border_style_str = cli.panel_border_style.or(config.panel_border_style).unwrap_or_else(|| "plain".to_string());
+    let panel_title = cli.panel_title.or(config.panel_title).unwrap_or_else(|| "Panel".to_string());
 
     let bg_color = Color::from_str(&bg_str).unwrap_or(Color::Reset);
     let clock_color = Color::from_str(&fg_str).unwrap_or(Color::Cyan);
@@ -260,6 +261,7 @@ pub fn run() -> Result<(), io::Error> {
             panel_border,
             panel_border_sides,
             panel_border_style,
+            panel_title: panel_title.clone(),
         }))?;
 
         // Polling rate set to 50ms for smooth timer UI updates

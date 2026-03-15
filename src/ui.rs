@@ -20,6 +20,7 @@ pub struct UiData<'a> {
     pub panel_border: Color,
     pub panel_border_sides: Borders,
     pub panel_border_style: BorderType,
+    pub panel_title: String,
 }
 
 pub fn draw(f: &mut Frame, data: &UiData) {
@@ -102,7 +103,8 @@ pub fn draw(f: &mut Frame, data: &UiData) {
     // 5. Draw panel (if visible)
     if let Some(panel_area) = panel_area {
         let panel_block = Block::default()
-            .title("Panel")
+            .title(data.panel_title.as_str())
+            .title_alignment(Alignment::Center)
             .borders(data.panel_border_sides)
             .border_type(data.panel_border_style)
             .style(Style::default().fg(data.panel_fg).bg(data.panel_bg))
