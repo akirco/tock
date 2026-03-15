@@ -101,7 +101,7 @@ impl AppState {
         match self.mode {
             AppMode::Clock => {
                 let now = Local::now();
-                (now.format("%H:%M:%S").to_string(), now.format("%A, %B %d, %Y").to_string())
+                (now.format("%H : %M : %S").to_string(), now.format("%A, %B %d, %Y").to_string())
             }
             AppMode::Stopwatch => {
                 let total = if self.is_running {
