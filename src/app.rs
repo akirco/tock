@@ -259,25 +259,25 @@ impl AppState {
         if self.mode != AppMode::Clock || !alarm.enabled {
             return None;
         }
-        
+
         let now = Local::now();
         let current_time = now.time();
         let now_naive = now.naive_local();
-        
+
         if let Ok(alarm_time) = chrono::NaiveTime::parse_from_str(&alarm.time, "%H:%M:%S")
             .or_else(|_| chrono::NaiveTime::parse_from_str(&alarm.time, "%H:%M")) {
             let mut alarm_datetime = now.date_naive().and_time(alarm_time);
-            
+
             if alarm_datetime.time() <= current_time {
                 alarm_datetime += chrono::Duration::days(1);
             }
-            
+
             let duration = alarm_datetime.signed_duration_since(now_naive);
             if duration.num_seconds() > 0 {
                 return Some(Duration::from_secs(duration.num_seconds() as u64));
             }
         }
-        
+
         None
     }
 
@@ -285,26 +285,26 @@ impl AppState {
         if self.mode != AppMode::Clock {
             return None;
         }
-        
+
         let now = Local::now();
         let current_time = now.time();
         let now_naive = now.naive_local();
-        
+
         let mut min_info: Option<(String, chrono::Duration)> = None;
-        
+
         for alarm in &self.data.alarms {
             if !alarm.enabled {
                 continue;
             }
-            
+
             if let Ok(alarm_time) = chrono::NaiveTime::parse_from_str(&alarm.time, "%H:%M:%S")
                 .or_else(|_| chrono::NaiveTime::parse_from_str(&alarm.time, "%H:%M")) {
                 let mut alarm_datetime = now.date_naive().and_time(alarm_time);
-                
+
                 if alarm_datetime.time() <= current_time {
                     alarm_datetime += chrono::Duration::days(1);
                 }
-                
+
                 let duration = alarm_datetime.signed_duration_since(now_naive);
                 if duration.num_seconds() > 0 {
                     if let Some((_, min_dur)) = min_info {
@@ -317,7 +317,7 @@ impl AppState {
                 }
             }
         }
-        
+
         min_info.map(|(note, d)| (note, Duration::from_secs(d.num_seconds() as u64)))
     }
 
@@ -612,14 +612,14 @@ pub fn run() -> Result<(), io::Error> {
                                 KeyCode::Backspace => {
                                     app_state.input_buffer.pop();
                                 }
-                                KeyCode::Char('l') | KeyCode::Right => {
+                                KeyCode::Right => {
                                     if let Some(c) = app_state.table_state.selected_column()
                                         && c < headers.len() - 1 {
                                             app_state.table_state.select_column(Some(c + 1));
                                             app_state.input_buffer.clear();
                                         }
                                 }
-                                KeyCode::Char('h') | KeyCode::Left => {
+                                KeyCode::Left => {
                                     if let Some(c) = app_state.table_state.selected_column()
                                         && c > 0 {
                                             app_state.table_state.select_column(Some(c - 1));
