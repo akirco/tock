@@ -22,11 +22,11 @@ pub struct Cli {
 
     /// Global background color (e.g., black, "#1e1e1e", reset)
     #[arg(short = 'b', long)]
-    pub bg_color: Option<String>,
+    pub bg: Option<String>,
 
     /// Clock text color (e.g., cyan, "#00ff00", white)
     #[arg(short = 'c', long)]
-    pub clock_color: Option<String>,
+    pub fg: Option<String>,
 
     /// Panel height ratio when visible (0-100, default 50)
     #[arg(long)]

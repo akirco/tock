@@ -199,8 +199,8 @@ pub fn run() -> Result<(), io::Error> {
     let time_choice = cli.time.or(config.time);
     let stopwatch_choice = cli.stopwatch || config.stopwatch.unwrap_or(false);
     let font_choice = cli.font.or(config.font).unwrap_or_else(|| "standard".to_string());
-    let bg_color_str = cli.bg_color.or(config.bg_color).unwrap_or_else(|| "reset".to_string());
-    let clock_color_str = cli.clock_color.or(config.clock_color).unwrap_or_else(|| "cyan".to_string());
+    let bg_str = cli.bg.or(config.bg).unwrap_or_else(|| "reset".to_string());
+    let fg_str = cli.fg.or(config.fg).unwrap_or_else(|| "cyan".to_string());
     let panel_ratio = cli.panel_ratio.or(config.panel_ratio).unwrap_or(50);
 
     // Panel styling
@@ -210,8 +210,8 @@ pub fn run() -> Result<(), io::Error> {
     let panel_border_sides_str = cli.panel_border_sides.or(config.panel_border_sides).unwrap_or_else(|| "all".to_string());
     let panel_border_style_str = cli.panel_border_style.or(config.panel_border_style).unwrap_or_else(|| "plain".to_string());
 
-    let bg_color = Color::from_str(&bg_color_str).unwrap_or(Color::Reset);
-    let clock_color = Color::from_str(&clock_color_str).unwrap_or(Color::Cyan);
+    let bg_color = Color::from_str(&bg_str).unwrap_or(Color::Reset);
+    let clock_color = Color::from_str(&fg_str).unwrap_or(Color::Cyan);
     let panel_bg = Color::from_str(&panel_bg_str).unwrap_or(Color::Reset);
     let panel_fg = Color::from_str(&panel_fg_str).unwrap_or(Color::Cyan);
     let panel_border = Color::from_str(&panel_border_str).unwrap_or(Color::Cyan);
