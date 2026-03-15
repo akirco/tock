@@ -29,7 +29,7 @@ pub struct Cli {
     pub fg: Option<String>,
 
     /// Panel height ratio when visible (0-100, default 50)
-    #[arg(long)]
+    #[arg(short = 'r', long)]
     pub panel_ratio: Option<u8>,
 
     /// Panel background color (e.g., black, "#1e1e1e", reset)
