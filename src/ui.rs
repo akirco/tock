@@ -23,39 +23,22 @@ pub struct UiData<'a> {
     pub panel_title: &'a str,
 }
 
-pub fn draw(f: &mut Frame, data: &UiData) {
-    let area = f.area();
-
-    // 1. Draw global background
-    f.render_widget(
-        Block::default().style(Style::default().bg(data.bg_color)),
-        area,
-    );
-
-    // 2. Vertical layout - footer always at bottom (1 row)
-    let footer_height = 1;
-    let main_area_height = area.height.saturating_sub(footer_height);
-    let main_area = Rect::new(area.x, area.y, area.width, main_area_height);
-
-    // Split main area for vertical centering
-    let (content_area, panel_area) = if data.show_panel {
-        // Panel mode: two-step layout
-        // Step 1: Split main_area into content_container and panel_area
-        let panel_ratio = data.panel_ratio.clamp(1, 99) as u16;
+fn build_layout(area: Rect, show_panel: bool, panel_ratio: u8) -> (Rect, Option<Rect>) {
+    if show_panel {
+        let panel_ratio = panel_ratio.clamp(1, 99) as u16;
         let outer_chunks = Layout::default()
             .direction(Direction::Vertical)
             .constraints([
-                Constraint::Percentage(100 - panel_ratio), // content container
-                Constraint::Percentage(panel_ratio),       // panel
+                Constraint::Percentage(100 - panel_ratio),
+                Constraint::Percentage(panel_ratio),
             ])
-            .split(main_area);
+            .split(area);
 
         let content_container = outer_chunks[0];
         let panel_area = outer_chunks[1];
 
-        // Step 2: Center content in content_container
         let container_height = content_container.height as usize;
-        let content_needed = 10; // ASCII art ~6-8 lines + subtitle ~2 lines
+        let content_needed = 10;
 
         let content_area = if container_height <= content_needed {
             content_container
@@ -75,8 +58,7 @@ pub fn draw(f: &mut Frame, data: &UiData) {
         };
         (content_area, Some(panel_area))
     } else {
-        // No panel: create three equal sections for vertical centering
-        let third = main_area_height / 3;
+        let third = area.height / 3;
         let vertical_chunks = Layout::default()
             .direction(Direction::Vertical)
             .constraints([
@@ -84,9 +66,26 @@ pub fn draw(f: &mut Frame, data: &UiData) {
                 Constraint::Length(third),
                 Constraint::Length(third),
             ])
-            .split(main_area);
+            .split(area);
         (vertical_chunks[1], None)
-    };
+    }
+}
+
+pub fn draw(f: &mut Frame, data: &UiData) {
+    let area = f.area();
+
+    // 1. Draw global background
+    f.render_widget(
+        Block::default().style(Style::default().bg(data.bg_color)),
+        area,
+    );
+
+    // 2. Vertical layout - footer always at bottom (1 row)
+    let footer_height = 1;
+    let main_area_height = area.height.saturating_sub(footer_height);
+    let main_area = Rect::new(area.x, area.y, area.width, main_area_height);
+
+    let (content_area, panel_area) = build_layout(main_area, data.show_panel, data.panel_ratio);
 
     // 3. Generate ASCII art
     let figure = data.font.convert(data.time_str).unwrap();
