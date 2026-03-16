@@ -213,10 +213,9 @@ fn expand_path(path: &str) -> String {
         if let Ok(home) = std::env::var("HOME") {
             return path.replacen("~", &home, 1);
         }
-    } else if path.starts_with("./") {
-        if let Ok(cwd) = std::env::current_dir() {
+    } else if path.starts_with("./")
+        && let Ok(cwd) = std::env::current_dir() {
             return path.replacen(".", &cwd.to_string_lossy(), 1);
         }
-    }
     path.to_string()
 }
