@@ -1,5 +1,6 @@
 use directories::ProjectDirs;
 use serde::Deserialize;
+use std::collections::HashMap;
 use std::fs;
 
 #[derive(Deserialize, Debug, Default)]
@@ -15,6 +16,13 @@ pub struct Config {
     pub panel_border_style: Option<String>,
     pub alarm_sound: Option<String>,
     pub countdown_sound: Option<String>,
+    pub color: Option<ColorConfig>,
+}
+
+#[derive(Deserialize, Debug, Default)]
+pub struct ColorConfig {
+    #[serde(default)]
+    pub custom: HashMap<String, String>,
 }
 
 pub fn load_config() -> Config {

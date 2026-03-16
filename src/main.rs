@@ -2,6 +2,7 @@ mod app;
 mod cli;
 mod config;
 mod data;
+mod gradient;
 mod handler;
 mod models;
 mod sound;

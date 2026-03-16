@@ -1,5 +1,6 @@
 use crate::cli::Cli;
 use crate::config::load_config;
+use crate::gradient::{parse_color, GradientBox};
 use crate::sound::{get_sound_path, SoundPlayer};
 use crate::state::AppState;
 use crate::util::{parse_border_sides, parse_border_style};
@@ -27,6 +28,9 @@ pub fn run() -> Result<(), io::Error> {
     let panel_border_str = cli.panel_border.or(config.panel_border).unwrap_or_else(|| "cyan".to_string());
     let panel_border_sides_str = cli.panel_border_sides.or(config.panel_border_sides).unwrap_or_else(|| "vertical".to_string());
     let panel_border_style_str = cli.panel_border_style.or(config.panel_border_style).unwrap_or_else(|| "rounded".to_string());
+
+    let custom_colors = config.color.as_ref().map(|c| c.custom.clone()).unwrap_or_default();
+    let gradient = cli.color.as_ref().and_then(|c| parse_color(c, &custom_colors));
 
     let alarm_sound_cli = cli.alarm_sound.or(config.alarm_sound).or(Some("alarm".to_string()));
     let countdown_sound_cli = cli.countdown_sound.or(config.countdown_sound).or(Some("alarm".to_string()));
@@ -84,6 +88,7 @@ pub fn run() -> Result<(), io::Error> {
         &font_choice,
         bg_color,
         clock_color,
+        gradient,
         panel_ratio,
         panel_bg,
         panel_fg,
@@ -107,6 +112,7 @@ fn main_loop(
     font_choice: &str,
     bg_color: Color,
     clock_color: Color,
+    gradient: Option<GradientBox>,
     panel_ratio: u8,
     panel_bg: Color,
     panel_fg: Color,
@@ -136,6 +142,7 @@ fn main_loop(
             footer_str: &footer_str,
             bg_color,
             clock_color,
+            gradient: gradient.clone(),
             show_panel,
             panel_ratio,
             panel_bg,

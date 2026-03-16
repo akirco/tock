@@ -1,8 +1,10 @@
+use crate::gradient::GradientBox;
 use crate::state::{AppMode, EditMode};
 use figlet_rs::FIGlet;
 use ratatui::{
     layout::{Alignment, Constraint, Direction, Layout, Rect},
     style::{Color, Style},
+    text::{Line, Span, Text},
     widgets::{Block, BorderType, Borders, Paragraph, Row, Table, TableState},
     Frame,
 };
@@ -14,6 +16,7 @@ pub struct UiData<'a> {
     pub footer_str: &'a str,
     pub bg_color: Color,
     pub clock_color: Color,
+    pub gradient: Option<GradientBox>,
     pub show_panel: bool,
     pub panel_ratio: u8,
     pub panel_bg: Color,
@@ -107,12 +110,47 @@ pub fn draw(f: &mut Frame, data: &mut UiData) {
         build_layout(main_area, data.show_panel, data.panel_ratio, content_height);
 
     // 4. Draw center area (ASCII art + Subtitle)
-    let center_text = format!("{}\n{}", ascii_art, data.subtitle_str);
-    let center_paragraph = Paragraph::new(center_text)
-        .style(Style::default().fg(data.clock_color).bg(data.bg_color))
-        .alignment(Alignment::Center);
+    if let Some(ref gradient) = data.gradient {
+        let max_width = ascii_art
+            .lines()
+            .map(|l| l.chars().count())
+            .max()
+            .unwrap_or(1);
 
-    f.render_widget(center_paragraph, content_area);
+        let mut lines = Vec::new();
+
+        for line in ascii_art.lines() {
+            let mut spans = Vec::new();
+            for (j, ch) in line.chars().enumerate() {
+                let ratio = j as f32 / max_width as f32;
+                let color = gradient.at(ratio).to_rgba8();
+                let ratatui_color = Color::Rgb(color[0], color[1], color[2]);
+                spans.push(Span::styled(
+                    ch.to_string(),
+                    Style::default().fg(ratatui_color),
+                ));
+            }
+            lines.push(Line::from(spans));
+        }
+
+        for line in data.subtitle_str.lines() {
+            lines.push(Line::from(Span::styled(
+                line,
+                Style::default().fg(data.clock_color),
+            )));
+        }
+
+        let center_paragraph = Paragraph::new(Text::from(lines)).alignment(Alignment::Center);
+
+        f.render_widget(center_paragraph, content_area);
+    } else {
+        let center_text = format!("{}\n{}", ascii_art, data.subtitle_str);
+        let center_paragraph = Paragraph::new(center_text)
+            .style(Style::default().fg(data.clock_color).bg(data.bg_color))
+            .alignment(Alignment::Center);
+
+        f.render_widget(center_paragraph, content_area);
+    }
 
     if let Some(panel_area) = panel_area {
         let panel_block = Block::default()

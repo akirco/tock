@@ -51,4 +51,8 @@ pub struct Cli {
     /// Countdown end sound file (default: alarm.mp3 in config/sounds)
     #[arg(long)]
     pub countdown_sound: Option<String>,
+
+    /// Clock color gradient: preset name (rainbow, sinebow, viridis, etc.) or custom colors (red,blue,green)
+    #[arg(long)]
+    pub color: Option<String>,
 }
