@@ -26,7 +26,6 @@ pub fn run() -> Result<(), io::Error> {
     let panel_border_str = cli.panel_border.or(config.panel_border).unwrap_or_else(|| "cyan".to_string());
     let panel_border_sides_str = cli.panel_border_sides.or(config.panel_border_sides).unwrap_or_else(|| "vertical".to_string());
     let panel_border_style_str = cli.panel_border_style.or(config.panel_border_style).unwrap_or_else(|| "rounded".to_string());
-    let user_panel_title = cli.panel_title.or(config.panel_title);
 
     let bg_color = Color::from_str(&bg_str).unwrap_or(Color::Reset);
     let clock_color = Color::from_str(&fg_str).unwrap_or(Color::Cyan);
@@ -37,8 +36,6 @@ pub fn run() -> Result<(), io::Error> {
     let panel_border_style = parse_border_style(&panel_border_style_str);
 
     let mut app_state = AppState::new();
-
-    let panel_title = user_panel_title.unwrap_or_else(|| " 󰀠 ".to_string());
 
     let font = {
         let font_choice_lower = font_choice.to_lowercase();
@@ -65,7 +62,6 @@ pub fn run() -> Result<(), io::Error> {
         &mut app_state,
         &font,
         &font_choice,
-        &panel_title,
         bg_color,
         clock_color,
         panel_ratio,
@@ -89,7 +85,6 @@ fn main_loop(
     app_state: &mut AppState,
     font: &FIGlet,
     font_choice: &str,
-    panel_title: &str,
     bg_color: Color,
     clock_color: Color,
     panel_ratio: u8,
@@ -129,7 +124,6 @@ fn main_loop(
             panel_border,
             panel_border_sides,
             panel_border_style,
-            panel_title,
             mode,
             items: &items,
             headers,

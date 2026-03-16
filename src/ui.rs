@@ -21,7 +21,6 @@ pub struct UiData<'a> {
     pub panel_border: Color,
     pub panel_border_sides: Borders,
     pub panel_border_style: BorderType,
-    pub panel_title: &'a str,
     pub mode: AppMode,
     pub items: &'a [Vec<String>],
     pub headers: &'a [&'static str],
@@ -117,7 +116,7 @@ pub fn draw(f: &mut Frame, data: &mut UiData) {
 
     if let Some(panel_area) = panel_area {
         let panel_block = Block::default()
-            .title(data.panel_title)
+            .title(data.mode.title())
             .title_alignment(Alignment::Center)
             .borders(data.panel_border_sides)
             .border_type(data.panel_border_style)

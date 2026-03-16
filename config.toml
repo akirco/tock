@@ -1,0 +1,29 @@
+# Tock Configuration File
+# Location: ~/.config/clock/config.toml
+
+# Font: standard, small, big, slant, or path to .flf file
+# font = "standard"
+
+# Global background color (e.g., black, "#1e1e1e", reset)
+# bg = "reset"
+
+# Clock text color (e.g., cyan, "#00ff00", white)
+# fg = "cyan"
+
+# Panel height ratio when visible (0-100)
+# panel_ratio = 50
+
+# Panel background color
+# panel_bg = "reset"
+
+# Panel foreground/text color
+# panel_fg = "cyan"
+
+# Panel border color
+# panel_border = "cyan"
+
+# Panel border sides: none, all, left, right, top, bottom, horizontal, vertical
+# panel_border_sides = "vertical"
+
+# Panel border style: plain, rounded, double, thick
+# panel_border_style = "rounded"
