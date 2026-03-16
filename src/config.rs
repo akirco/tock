@@ -9,6 +9,7 @@ pub struct Config {
     pub bg: Option<String>,
     pub fg: Option<String>,
     pub subtitle_fg: Option<String>,
+    pub hidden_help: Option<bool>,
     pub panel_ratio: Option<u8>,
     pub panel_bg: Option<String>,
     pub panel_fg: Option<String>,

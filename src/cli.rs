@@ -59,4 +59,8 @@ pub struct Cli {
     /// Clock color gradient: preset name (rainbow, sinebow, viridis, etc.) or custom colors (red,blue,green)
     #[arg(long)]
     pub color: Option<String>,
+
+    /// Hide help text in footer and panel
+    #[arg(long)]
+    pub hidden_help: Option<bool>,
 }

@@ -18,6 +18,7 @@ pub struct UiData<'a> {
     pub clock_color: Color,
     pub subtitle_color: Color,
     pub gradient: Option<GradientBox>,
+    pub hidden_help: bool,
     pub show_panel: bool,
     pub panel_ratio: u8,
     pub panel_bg: Color,
@@ -180,12 +181,14 @@ pub fn draw(f: &mut Frame, data: &mut UiData) {
     }
 
     // 6. Draw footer hints (always at bottom)
-    let footer_area = Rect::new(area.x, area.height - 1, area.width, 1);
-    let footer_paragraph = Paragraph::new(data.footer_str)
-        .style(Style::default().fg(Color::DarkGray).bg(data.bg_color))
-        .alignment(Alignment::Right);
+    if !data.hidden_help {
+        let footer_area = Rect::new(area.x, area.height - 1, area.width, 1);
+        let footer_paragraph = Paragraph::new(data.footer_str)
+            .style(Style::default().fg(Color::DarkGray).bg(data.bg_color))
+            .alignment(Alignment::Right);
 
-    f.render_widget(footer_paragraph, footer_area);
+        f.render_widget(footer_paragraph, footer_area);
+    }
 }
 
 fn draw_table(f: &mut Frame, area: Rect, data: &mut UiData) {
@@ -252,25 +255,27 @@ fn draw_table(f: &mut Frame, area: Rect, data: &mut UiData) {
 
     f.render_stateful_widget(table, chunks[0], data.table_state);
 
-    let help_text = match data.edit_mode {
-        EditMode::Normal => {
-            if data.mode == AppMode::Stopwatch {
-                " 'd' Delete | ↑↓←→ Navigate | g/G First/Last "
-            } else {
-                " 'a' Add | 'e' Edit | 'd' Delete | ↑↓←→ Navigate | g/G First/Last "
+    if !data.hidden_help {
+        let help_text = match data.edit_mode {
+            EditMode::Normal => {
+                if data.mode == AppMode::Stopwatch {
+                    " 'd' Delete | ↑↓←→ Navigate | g/G First/Last "
+                } else {
+                    " 'a' Add | 'e' Edit | 'd' Delete | ↑↓←→ Navigate | g/G First/Last "
+                }
             }
-        }
-        EditMode::Typing { is_new_row: true } => {
-            " [Adding] Enter: next field | Esc: abort | Space: toggle "
-        }
-        EditMode::Typing { is_new_row: false } => {
-            " [Editing] Enter: save | Esc: cancel | Space: toggle "
-        }
-    };
+            EditMode::Typing { is_new_row: true } => {
+                " [Adding] Enter: next field | Esc: abort | Space: toggle "
+            }
+            EditMode::Typing { is_new_row: false } => {
+                " [Editing] Enter: save | Esc: cancel | Space: toggle "
+            }
+        };
 
-    let help_widget = Paragraph::new(help_text)
-        .style(Style::default().fg(Color::DarkGray))
-        .alignment(Alignment::Center);
+        let help_widget = Paragraph::new(help_text)
+            .style(Style::default().fg(Color::DarkGray))
+            .alignment(Alignment::Center);
 
-    f.render_widget(help_widget, chunks[1]);
+        f.render_widget(help_widget, chunks[1]);
+    }
 }
