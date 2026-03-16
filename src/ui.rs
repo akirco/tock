@@ -30,7 +30,12 @@ pub struct UiData<'a> {
     pub input_buffer: &'a str,
 }
 
-fn build_layout(area: Rect, show_panel: bool, panel_ratio: u8) -> (Rect, Option<Rect>) {
+fn build_layout(
+    area: Rect,
+    show_panel: bool,
+    panel_ratio: u8,
+    content_height: usize,
+) -> (Rect, Option<Rect>) {
     if show_panel {
         let panel_ratio = panel_ratio.clamp(1, 99) as u16;
         let outer_chunks = Layout::default()
@@ -45,19 +50,18 @@ fn build_layout(area: Rect, show_panel: bool, panel_ratio: u8) -> (Rect, Option<
         let panel_area = outer_chunks[1];
 
         let container_height = content_container.height as usize;
-        let content_needed = 10;
 
-        let content_area = if container_height <= content_needed {
+        let content_area = if container_height <= content_height {
             content_container
         } else {
-            let remaining = container_height - content_needed;
+            let remaining = container_height - content_height;
             let top_space = remaining / 2;
 
             let inner_chunks = Layout::default()
                 .direction(Direction::Vertical)
                 .constraints([
                     Constraint::Length(top_space as u16),
-                    Constraint::Length(content_needed as u16),
+                    Constraint::Length(content_height as u16),
                     Constraint::Length((remaining - top_space) as u16),
                 ])
                 .split(content_container);
@@ -92,11 +96,15 @@ pub fn draw(f: &mut Frame, data: &mut UiData) {
     let main_area_height = area.height.saturating_sub(footer_height);
     let main_area = Rect::new(area.x, area.y, area.width, main_area_height);
 
-    let (content_area, panel_area) = build_layout(main_area, data.show_panel, data.panel_ratio);
-
-    // 3. Generate ASCII art
+    // 3. Generate ASCII art and calculate content height
     let figure = data.font.convert(data.time_str).unwrap();
     let ascii_art = figure.to_string();
+    let ascii_height = ascii_art.lines().count();
+    let subtitle_height = data.subtitle_str.lines().count();
+    let content_height = ascii_height + subtitle_height + 1;
+
+    let (content_area, panel_area) =
+        build_layout(main_area, data.show_panel, data.panel_ratio, content_height);
 
     // 4. Draw center area (ASCII art + Subtitle)
     let center_text = format!("{}\n{}", ascii_art, data.subtitle_str);

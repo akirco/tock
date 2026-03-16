@@ -40,15 +40,18 @@ pub fn run() -> Result<(), io::Error> {
 
     let panel_title = user_panel_title.unwrap_or_else(|| " 󰀠 ".to_string());
 
-    let font = match font_choice.to_lowercase().as_str() {
-        "standard" => FIGlet::standard().expect("Failed to load standard font"),
-        "small" => FIGlet::small().expect("Failed to load small font"),
-        "big" => FIGlet::big().expect("Failed to load big font"),
-        "slant" => FIGlet::slant().expect("Failed to load slant font"),
-        _ => FIGlet::from_file(&font_choice).unwrap_or_else(|_| {
-            eprintln!("Warning: Failed to load font file '{}', using standard", font_choice);
-            FIGlet::standard().expect("Failed to load standard font")
-        }),
+    let font = {
+        let font_choice_lower = font_choice.to_lowercase();
+        match font_choice_lower.as_str() {
+            "standard" => FIGlet::standard().expect("Failed to load standard font"),
+            "small" => FIGlet::small().expect("Failed to load small font"),
+            "big" => FIGlet::big().expect("Failed to load big font"),
+            "slant" => FIGlet::slant().expect("Failed to load slant font"),
+            _ => FIGlet::from_file(&font_choice).unwrap_or_else(|_| {
+                eprintln!("Warning: Failed to load font file '{}', using standard", font_choice);
+                FIGlet::standard().expect("Failed to load standard font")
+            }),
+        }
     };
 
     enable_raw_mode()?;
