@@ -27,6 +27,14 @@ impl AppMode {
             AppMode::Countdown => "󱦟 Countdown",
         }
     }
+
+    pub fn space_key_desc(&self) -> &'static str {
+        match self {
+            AppMode::Clock => "Stop Alarm",
+            AppMode::Stopwatch => "Start/Stop",
+            AppMode::Countdown => "Start/Stop Timer",
+        }
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -311,7 +319,7 @@ impl AppState {
                 } else {
                     None
                 };
-                
+
                 let subtitle = if let Some(start_time) = self.sound_start_time {
                     let elapsed = start_time.elapsed();
                     let remaining = self.current_alarm_duration.saturating_sub(elapsed.as_secs());
@@ -323,7 +331,7 @@ impl AppState {
                 } else {
                     alarm_info.unwrap_or(date_str)
                 };
-                
+
                 (now.format("%H : %M : %S").to_string(), subtitle)
             }
             AppMode::Stopwatch => {
@@ -333,7 +341,7 @@ impl AppState {
                     self.sw_elapsed
                 };
                 let status = if self.is_running { "(Running)" } else { "(Paused)" };
-                
+
                 let subtitle = if let Some(start_time) = self.sound_start_time {
                     let elapsed = start_time.elapsed();
                     let remaining = self.current_alarm_duration.saturating_sub(elapsed.as_secs());
@@ -345,7 +353,7 @@ impl AppState {
                 } else {
                     format!("STOPWATCH {}", status)
                 };
-                
+
                 (
                     super::util::format_duration(total),
                     subtitle,
@@ -359,7 +367,7 @@ impl AppState {
                 } else {
                     "COUNTDOWN (Paused)".to_string()
                 };
-                
+
                 let subtitle = if let Some(start_time) = self.sound_start_time {
                     let elapsed = start_time.elapsed();
                     let remaining = self.current_alarm_duration.saturating_sub(elapsed.as_secs());
@@ -372,7 +380,7 @@ impl AppState {
                 } else {
                     if self.cd_name.is_empty() { status } else { format!("{} - {}", self.cd_name, status) }
                 };
-                
+
                 (super::util::format_duration(self.cd_remaining), subtitle)
             }
         }
@@ -387,7 +395,7 @@ impl AppState {
                 self.sound_start_time = None;
             }
         }
-        
+
         if self.is_running && self.mode == AppMode::Countdown
             && let Some(target) = self.cd_target {
                 let now = Instant::now();
@@ -396,7 +404,7 @@ impl AppState {
                     self.cd_remaining = Duration::ZERO;
                     if !self.countdown_played {
                         self.countdown_played = true;
-                        
+
                         // Get alarm settings from selected preset
                         if let Some(r) = self.table_state.selected()
                             && r < self.data.presets.len() {
@@ -404,7 +412,7 @@ impl AppState {
                                 self.current_alarm_duration = preset.alarm_duration;
                                 self.current_alarm_repeat = preset.alarm_repeat;
                             }
-                        
+
                         self.sound_start_time = Some(Instant::now());
                         if let Some(ref sound) = self.countdown_sound
                             && let Some(ref player) = self.sound_player {

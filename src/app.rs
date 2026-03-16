@@ -15,6 +15,33 @@ use ratatui::{backend::CrosstermBackend, style::Color, Terminal};
 use std::{io, str::FromStr, sync::Arc, time::Duration};
 
 pub fn run() -> Result<(), io::Error> {
+    let mut config = build_config()?;
+
+    enable_raw_mode()?;
+    let mut stdout = io::stdout();
+    execute!(stdout, EnterAlternateScreen, EnableMouseCapture)?;
+    let backend = CrosstermBackend::new(stdout);
+    let mut terminal = Terminal::new(backend)?;
+
+    let result = main_loop(
+        &mut terminal,
+        &mut config.app_state,
+        &config.ui_config,
+    );
+
+    disable_raw_mode()?;
+    execute!(terminal.backend_mut(), LeaveAlternateScreen, DisableMouseCapture)?;
+    terminal.show_cursor()?;
+
+    result
+}
+
+struct AppConfig {
+    app_state: AppState,
+    ui_config: UiConfig,
+}
+
+fn build_config() -> Result<AppConfig, io::Error> {
     let cli = Cli::parse();
     let config = load_config();
 
@@ -58,7 +85,7 @@ pub fn run() -> Result<(), io::Error> {
     let panel_border_sides = parse_border_sides(&panel_border_sides_str);
     let panel_border_style = parse_border_style(&panel_border_style_str);
 
-    let mut app_state = AppState::new(
+    let app_state = AppState::new(
         Some(sound_player),
         alarm_sound.map(|p| p.to_string_lossy().to_string()),
         countdown_sound.map(|p| p.to_string_lossy().to_string()),
@@ -78,17 +105,9 @@ pub fn run() -> Result<(), io::Error> {
         }
     };
 
-    enable_raw_mode()?;
-    let mut stdout = io::stdout();
-    execute!(stdout, EnterAlternateScreen, EnableMouseCapture)?;
-    let backend = CrosstermBackend::new(stdout);
-    let mut terminal = Terminal::new(backend)?;
-
-    let result = main_loop(
-        &mut terminal,
-        &mut app_state,
-        &font,
-        &font_choice,
+    let ui_config = UiConfig {
+        font,
+        font_choice,
         bg_color,
         clock_color,
         subtitle_color,
@@ -100,21 +119,17 @@ pub fn run() -> Result<(), io::Error> {
         panel_border,
         panel_border_sides,
         panel_border_style,
-    );
+    };
 
-    disable_raw_mode()?;
-    execute!(terminal.backend_mut(), LeaveAlternateScreen, DisableMouseCapture)?;
-    terminal.show_cursor()?;
-
-    result
+    Ok(AppConfig {
+        app_state,
+        ui_config,
+    })
 }
 
-#[allow(clippy::too_many_arguments)]
-fn main_loop(
-    terminal: &mut Terminal<CrosstermBackend<io::Stdout>>,
-    app_state: &mut AppState,
-    font: &FIGlet,
-    font_choice: &str,
+struct UiConfig {
+    font: FIGlet,
+    font_choice: String,
     bg_color: Color,
     clock_color: Color,
     subtitle_color: Color,
@@ -126,6 +141,12 @@ fn main_loop(
     panel_border: Color,
     panel_border_sides: ratatui::widgets::Borders,
     panel_border_style: ratatui::widgets::BorderType,
+}
+
+fn main_loop(
+    terminal: &mut Terminal<CrosstermBackend<io::Stdout>>,
+    app_state: &mut AppState,
+    ui_config: &UiConfig,
 ) -> Result<(), io::Error> {
     loop {
         app_state.update_countdown();
@@ -137,28 +158,29 @@ fn main_loop(
         let items = app_state.get_items();
 
         let footer_str = format!(
-            "{} (Font: {}) | [Tab] Switch Mode | [p] Panel | [Space] Stop Alarm | [q] Exit",
+            "{} (Font: {}) | [Tab] Switch Mode | [p] Panel | [Space] {} | [q] Exit",
             mode.title(),
-            font_choice
+            ui_config.font_choice,
+            mode.space_key_desc()
         );
 
         terminal.draw(|f| crate::ui::draw(f, &mut crate::ui::UiData {
-            font,
+            font: &ui_config.font,
             time_str: &time_str,
             subtitle_str: &subtitle_str,
             footer_str: &footer_str,
-            bg_color,
-            clock_color,
-            subtitle_color,
-            gradient: gradient.clone(),
-            hidden_help,
+            bg_color: ui_config.bg_color,
+            clock_color: ui_config.clock_color,
+            subtitle_color: ui_config.subtitle_color,
+            gradient: ui_config.gradient.clone(),
+            hidden_help: ui_config.hidden_help,
             show_panel,
-            panel_ratio,
-            panel_bg,
-            panel_fg,
-            panel_border,
-            panel_border_sides,
-            panel_border_style,
+            panel_ratio: ui_config.panel_ratio,
+            panel_bg: ui_config.panel_bg,
+            panel_fg: ui_config.panel_fg,
+            panel_border: ui_config.panel_border,
+            panel_border_sides: ui_config.panel_border_sides,
+            panel_border_style: ui_config.panel_border_style,
             mode,
             items: &items,
             headers,
