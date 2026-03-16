@@ -274,6 +274,14 @@ fn handle_enter(app_state: &mut AppState, headers: &[&'static str], is_new_row: 
                             app_state.data.alarms[r].note = input;
                             true
                         }
+                        4 => {
+                            app_state.data.alarms[r].alarm_duration = input.parse().unwrap_or(60);
+                            true
+                        }
+                        5 => {
+                            app_state.data.alarms[r].alarm_repeat = input.parse().unwrap_or(0);
+                            true
+                        }
                         _ => false,
                     }
                 }
@@ -285,6 +293,14 @@ fn handle_enter(app_state: &mut AppState, headers: &[&'static str], is_new_row: 
                         }
                         1 => {
                             app_state.data.presets[r].duration = input.parse().unwrap_or(0);
+                            true
+                        }
+                        2 => {
+                            app_state.data.presets[r].alarm_duration = input.parse().unwrap_or(60);
+                            true
+                        }
+                        3 => {
+                            app_state.data.presets[r].alarm_repeat = input.parse().unwrap_or(0);
                             true
                         }
                         _ => false,

@@ -32,7 +32,6 @@ impl Repeat {
     }
 }
 
-
 impl std::fmt::Display for Repeat {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}", self.as_str())
@@ -66,6 +65,8 @@ pub struct Alarm {
     pub enabled: bool,
     pub repeat: Repeat,
     pub note: String,
+    pub alarm_duration: u64,
+    pub alarm_repeat: u32,
 }
 
 impl Default for Alarm {
@@ -75,6 +76,8 @@ impl Default for Alarm {
             enabled: false,
             repeat: Repeat::Daily,
             note: String::new(),
+            alarm_duration: 60,
+            alarm_repeat: 0,
         }
     }
 }
@@ -83,6 +86,8 @@ impl Default for Alarm {
 pub struct CountdownPreset {
     pub name: String,
     pub duration: u64,
+    pub alarm_duration: u64,
+    pub alarm_repeat: u32,
 }
 
 impl Default for CountdownPreset {
@@ -90,6 +95,8 @@ impl Default for CountdownPreset {
         Self {
             name: "Brush teeth".to_string(),
             duration: 120,
+            alarm_duration: 60,
+            alarm_repeat: 0,
         }
     }
 }

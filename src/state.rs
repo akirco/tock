@@ -56,6 +56,8 @@ pub struct AppState {
     pub last_alarm_triggered: Option<u64>,
     pub countdown_played: bool,
     pub sound_start_time: Option<Instant>,
+    pub current_alarm_duration: u64,
+    pub current_alarm_repeat: u32,
 }
 
 impl AppState {
@@ -85,6 +87,8 @@ impl AppState {
             last_alarm_triggered: None,
             countdown_played: false,
             sound_start_time: None,
+            current_alarm_duration: 60,
+            current_alarm_repeat: 0,
         }
     }
 
@@ -114,6 +118,8 @@ impl AppState {
                         String::from(if a.enabled { "✔" } else { "✗" }),
                         a.repeat.to_string(),
                         a.note.clone(),
+                        a.alarm_duration.to_string(),
+                        a.alarm_repeat.to_string(),
                         if a.enabled {
                             self.get_alarm_next_duration(a)
                                 .map(super::util::format_duration_short)
@@ -139,16 +145,21 @@ impl AppState {
                 .data
                 .presets
                 .iter()
-                .map(|p| vec![p.name.clone(), p.duration.to_string()])
+                .map(|p| vec![
+                    p.name.clone(),
+                    p.duration.to_string(),
+                    p.alarm_duration.to_string(),
+                    p.alarm_repeat.to_string(),
+                ])
                 .collect(),
         }
     }
 
     pub fn get_headers(&self) -> &'static [&'static str] {
         match self.mode {
-            AppMode::Clock => &["Time", "Enabled", "Repeat", "Note", "Next"],
+            AppMode::Clock => &["Time", "Enabled", "Repeat", "Note", "Duration(s)", "Repeat", "Next"],
             AppMode::Stopwatch => &["Lap", "Time"],
-            AppMode::Countdown => &["Name", "Seconds"],
+            AppMode::Countdown => &["Name", "Seconds", "Duration(s)", "Repeat"],
         }
     }
 
@@ -169,7 +180,9 @@ impl AppState {
                     1 => String::from(if a.enabled { "✔" } else { "✗" }),
                     2 => a.repeat.to_string(),
                     3 => a.note.clone(),
-                    4 => {
+                    4 => a.alarm_duration.to_string(),
+                    5 => a.alarm_repeat.to_string(),
+                    6 => {
                         if a.enabled {
                             self.get_alarm_next_duration(a)
                                 .map(super::util::format_duration_short)
@@ -194,6 +207,8 @@ impl AppState {
                 match col {
                     0 => p.name.clone(),
                     1 => p.duration.to_string(),
+                    2 => p.alarm_duration.to_string(),
+                    3 => p.alarm_repeat.to_string(),
                     _ => String::new(),
                 }
             }
@@ -297,9 +312,9 @@ impl AppState {
                     None
                 };
                 
-                let subtitle = if self.sound_start_time.is_some() {
-                    let elapsed = self.sound_start_time.unwrap().elapsed();
-                    let remaining = 60 - elapsed.as_secs();
+                let subtitle = if let Some(start_time) = self.sound_start_time {
+                    let elapsed = start_time.elapsed();
+                    let remaining = self.current_alarm_duration.saturating_sub(elapsed.as_secs());
                     if remaining > 0 {
                         format!("🔔 Ringing... ({}s)", remaining)
                     } else {
@@ -319,9 +334,9 @@ impl AppState {
                 };
                 let status = if self.is_running { "(Running)" } else { "(Paused)" };
                 
-                let subtitle = if self.sound_start_time.is_some() {
-                    let elapsed = self.sound_start_time.unwrap().elapsed();
-                    let remaining = 60 - elapsed.as_secs();
+                let subtitle = if let Some(start_time) = self.sound_start_time {
+                    let elapsed = start_time.elapsed();
+                    let remaining = self.current_alarm_duration.saturating_sub(elapsed.as_secs());
                     if remaining > 0 {
                         format!("🔔 Ringing... ({}s) | STOPWATCH {}", remaining, status)
                     } else {
@@ -345,9 +360,9 @@ impl AppState {
                     "COUNTDOWN (Paused)".to_string()
                 };
                 
-                let subtitle = if self.sound_start_time.is_some() {
-                    let elapsed = self.sound_start_time.unwrap().elapsed();
-                    let remaining = 60 - elapsed.as_secs();
+                let subtitle = if let Some(start_time) = self.sound_start_time {
+                    let elapsed = start_time.elapsed();
+                    let remaining = self.current_alarm_duration.saturating_sub(elapsed.as_secs());
                     if remaining > 0 {
                         let base = if self.cd_name.is_empty() { status } else { format!("{} - {}", self.cd_name, status) };
                         format!("🔔 Ringing... ({}s) | {}", remaining, base)
@@ -364,9 +379,10 @@ impl AppState {
     }
 
     pub fn update_countdown(&mut self) {
-        // Check if sound should stop after 1 minute
+        // Check if sound should stop based on alarm_duration
         if let Some(start_time) = self.sound_start_time {
-            if start_time.elapsed() > Duration::from_secs(60) {
+            let stop_duration = Duration::from_secs(self.current_alarm_duration);
+            if start_time.elapsed() > stop_duration {
                 self.stop_sound();
                 self.sound_start_time = None;
             }
@@ -380,12 +396,20 @@ impl AppState {
                     self.cd_remaining = Duration::ZERO;
                     if !self.countdown_played {
                         self.countdown_played = true;
+                        
+                        // Get alarm settings from selected preset
+                        if let Some(r) = self.table_state.selected()
+                            && r < self.data.presets.len() {
+                                let preset = &self.data.presets[r];
+                                self.current_alarm_duration = preset.alarm_duration;
+                                self.current_alarm_repeat = preset.alarm_repeat;
+                            }
+                        
                         self.sound_start_time = Some(Instant::now());
-                        if let Some(ref sound) = self.countdown_sound {
-                            if let Some(ref player) = self.sound_player {
+                        if let Some(ref sound) = self.countdown_sound
+                            && let Some(ref player) = self.sound_player {
                                 player.play(sound);
                             }
-                        }
                         if !self.cd_name.is_empty() {
                             notification("Countdown Finished", &self.cd_name);
                         }
@@ -420,16 +444,17 @@ impl AppState {
             let seconds_until = time_diff.num_seconds();
 
             // Window of 3 seconds to catch the alarm
-            if seconds_until >= 0 && seconds_until <= 3 {
+            if (0..=3).contains(&seconds_until) {
                 let alarm_id = idx as u64;
                 if self.last_alarm_triggered != Some(alarm_id) {
                     self.last_alarm_triggered = Some(alarm_id);
+                    self.current_alarm_duration = alarm.alarm_duration;
+                    self.current_alarm_repeat = alarm.alarm_repeat;
                     self.sound_start_time = Some(Instant::now());
-                    if let Some(ref sound) = self.alarm_sound {
-                        if let Some(ref player) = self.sound_player {
+                    if let Some(ref sound) = self.alarm_sound
+                        && let Some(ref player) = self.sound_player {
                             player.play(sound);
                         }
-                    }
                     if !alarm.note.is_empty() {
                         notification("Alarm", &alarm.note);
                     }

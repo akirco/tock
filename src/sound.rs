@@ -104,7 +104,7 @@ pub fn notification(title: &str, body: &str) {
     use notify_rust::Notification;
 
     let _ = Notification::new()
-        .appname("tock")
+        .summary("tock")
         .subtitle(title)
         .body(body)
         .show();
