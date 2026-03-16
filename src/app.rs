@@ -22,7 +22,7 @@ pub fn run() -> Result<(), io::Error> {
     let bg_str = cli.bg.or(config.bg).unwrap_or_else(|| "reset".to_string());
     let fg_str = cli.fg.or(config.fg).unwrap_or_else(|| "cyan".to_string());
     let subtitle_fg_str = cli.subtitle_fg.or(config.subtitle_fg).unwrap_or_else(|| "cyan".to_string());
-    let hidden_help = cli.hidden_help.or(config.hidden_help).unwrap_or(false);
+    let hidden_help = cli.hidden_help || config.hidden_help.unwrap_or(false);
     let panel_ratio = cli.panel_ratio.or(config.panel_ratio).unwrap_or(50);
 
     let panel_bg_str = cli.panel_bg.or(config.panel_bg).unwrap_or_else(|| "reset".to_string());

@@ -61,6 +61,6 @@ pub struct Cli {
     pub color: Option<String>,
 
     /// Hide help text in footer and panel
-    #[arg(long)]
-    pub hidden_help: Option<bool>,
+    #[arg(long, action = clap::ArgAction::SetTrue)]
+    pub hidden_help: bool,
 }
