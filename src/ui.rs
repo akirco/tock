@@ -69,16 +69,17 @@ fn build_layout(
         };
         (content_area, Some(panel_area))
     } else {
-        let third = area.height / 3;
-        let vertical_chunks = Layout::default()
-            .direction(Direction::Vertical)
-            .constraints([
-                Constraint::Length(third),
-                Constraint::Length(third),
-                Constraint::Length(third),
-            ])
-            .split(area);
-        (vertical_chunks[1], None)
+        let available_height = area.height as usize;
+        let actual_content_height = content_height.min(available_height);
+        let top_space = (available_height - actual_content_height) / 2;
+
+        let content_area = Rect::new(
+            area.x,
+            area.y + top_space as u16,
+            area.width,
+            actual_content_height as u16,
+        );
+        (content_area, None)
     }
 }
 
