@@ -8,12 +8,14 @@ A terminal ASCII clock application with stopwatch and countdown timer functional
 - **Stopwatch Mode**: Full-featured stopwatch with lap history tracking
 - **Countdown Mode**: Timer with presets for common durations
 
-- [ ] Combine the three modes into one program and use shortcut keys to switch mode
+~~ - [ ] Combine the three modes into one program and use shortcut keys to switch mode ~~
+
+- [ ] aur installation
 
 ## Installation
 
 ```bash
-cargo install tock
+cargo install --git https://github.com/akirco/tock.git
 ```
 
 Or build from source:
@@ -31,14 +33,14 @@ cargo build --release
 tock
 ```
 
-### Stopwatch Mode
+~~ ### Stopwatch Mode ~~
 ```bash
 tock -s
 # or
 tock --stopwatch
 ```
 
-### Countdown Mode
+~~ ### Countdown Mode ~~
 ```bash
 tock -t 5m
 # or
@@ -70,6 +72,7 @@ Available colors: black, red, green, yellow, blue, magenta, cyan, white, reset, 
 - `Space` - Play/Pause (Stopwatch/Countdown)
 - `r` - Reset (Stopwatch/Countdown)
 - `p` - Toggle panel
+- `Tab` - Switch mode
 
 ### Panel Navigation
 - `↑↓←→` - Navigate rows/columns
