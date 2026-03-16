@@ -4,8 +4,6 @@ use std::fs;
 
 #[derive(Deserialize, Debug, Default)]
 pub struct Config {
-    pub stopwatch: Option<bool>,
-    pub time: Option<String>,
     pub font: Option<String>,
     pub bg: Option<String>,
     pub fg: Option<String>,

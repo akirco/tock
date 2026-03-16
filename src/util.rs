@@ -21,32 +21,6 @@ pub fn format_duration_short(d: Duration) -> String {
     }
 }
 
-pub fn parse_duration(s: &str) -> Duration {
-    let (mut total_secs, mut current_num, mut has_digits) = (0u64, 0u64, false);
-    for c in s.chars() {
-        if let Some(d) = c.to_digit(10) {
-            current_num = current_num * 10 + d as u64;
-            has_digits = true;
-        } else {
-            match c {
-                'h' | 'H' => total_secs += current_num * 3600,
-                'm' | 'M' => total_secs += current_num * 60,
-                's' | 'S' => total_secs += current_num,
-                _ => {}
-            }
-            current_num = 0;
-            has_digits = false;
-        }
-    }
-    if has_digits {
-        total_secs += current_num;
-    }
-    if total_secs == 0 {
-        total_secs = 300;
-    }
-    Duration::from_secs(total_secs)
-}
-
 pub fn parse_border_sides(s: &str) -> ratatui::widgets::Borders {
     use ratatui::widgets::Borders;
     match s.to_lowercase().as_str() {

@@ -12,6 +12,11 @@ pub fn handle_key(
     app_state: &mut AppState,
     headers: &[&'static str],
 ) -> Action {
+    if matches!(key_code, KeyCode::Tab) {
+        app_state.switch_mode();
+        return Action::Continue;
+    }
+
     if app_state.show_panel {
         match app_state.edit_mode {
             EditMode::Normal => handle_normal_mode(key_code, modifiers, app_state, headers),

@@ -1,6 +1,6 @@
 use crate::cli::Cli;
 use crate::config::load_config;
-use crate::state::{AppMode, AppState};
+use crate::state::AppState;
 use crate::util::{parse_border_sides, parse_border_style};
 use clap::Parser;
 use crossterm::{
@@ -16,8 +16,6 @@ pub fn run() -> Result<(), io::Error> {
     let cli = Cli::parse();
     let config = load_config();
 
-    let time_choice = cli.time.as_deref().or(config.time.as_deref());
-    let stopwatch_choice = cli.stopwatch || config.stopwatch.unwrap_or(false);
     let font_choice = cli.font.or(config.font).unwrap_or_else(|| "standard".to_string());
     let bg_str = cli.bg.or(config.bg).unwrap_or_else(|| "reset".to_string());
     let fg_str = cli.fg.or(config.fg).unwrap_or_else(|| "cyan".to_string());
@@ -38,14 +36,9 @@ pub fn run() -> Result<(), io::Error> {
     let panel_border_sides = parse_border_sides(&panel_border_sides_str);
     let panel_border_style = parse_border_style(&panel_border_style_str);
 
-    let mut app_state = AppState::new(stopwatch_choice, time_choice);
+    let mut app_state = AppState::new();
 
-    let default_title = match app_state.mode {
-        AppMode::Clock => " 󰀠 ",
-        AppMode::Stopwatch => "  ",
-        AppMode::Countdown => " 󱦟 ",
-    };
-    let panel_title = user_panel_title.unwrap_or_else(|| default_title.to_string());
+    let panel_title = user_panel_title.unwrap_or_else(|| " 󰀠 ".to_string());
 
     let font = match font_choice.to_lowercase().as_str() {
         "standard" => FIGlet::standard().expect("Failed to load standard font"),
@@ -58,11 +51,11 @@ pub fn run() -> Result<(), io::Error> {
         }),
     };
 
-    let footer_str = if app_state.mode == AppMode::Clock {
-        format!("Clock (Font: {}) - [p] Toggle Panel | Press 'ESC' or 'Ctrl+C' to exit", font_choice)
-    } else {
-        format!("Timer (Font: {}) - [Space] Play/Pause | [r] Reset | [p] Panel | [q] Exit", font_choice)
-    };
+    let footer_str = format!(
+        "{} (Font: {}) | [Tab] Switch Mode | [p] Panel | [q] Exit",
+        app_state.mode.title(),
+        font_choice
+    );
 
     enable_raw_mode()?;
     let mut stdout = io::stdout();

@@ -9,6 +9,24 @@ pub enum AppMode {
     Countdown,
 }
 
+impl AppMode {
+    pub fn next(&self) -> Self {
+        match self {
+            AppMode::Clock => AppMode::Stopwatch,
+            AppMode::Stopwatch => AppMode::Countdown,
+            AppMode::Countdown => AppMode::Clock,
+        }
+    }
+
+    pub fn title(&self) -> &'static str {
+        match self {
+            AppMode::Clock => "󰀠 Clock",
+            AppMode::Stopwatch => " Stopwatch",
+            AppMode::Countdown => "󱦟 Countdown",
+        }
+    }
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum EditMode {
     Normal,
@@ -33,27 +51,19 @@ pub struct AppState {
 }
 
 impl AppState {
-    pub fn new(stopwatch: bool, time_str: Option<&str>) -> Self {
-        let (mode, cd_initial) = if let Some(t_str) = time_str {
-            (AppMode::Countdown, super::util::parse_duration(t_str))
-        } else if stopwatch {
-            (AppMode::Stopwatch, Duration::ZERO)
-        } else {
-            (AppMode::Clock, Duration::ZERO)
-        };
-
+    pub fn new() -> Self {
         let mut table_state = TableState::default();
         table_state.select_first();
         table_state.select_first_column();
 
         Self {
-            mode,
+            mode: AppMode::Clock,
             is_running: false,
             sw_start: None,
             sw_elapsed: Duration::ZERO,
             cd_target: None,
-            cd_remaining: cd_initial,
-            cd_initial,
+            cd_remaining: Duration::ZERO,
+            cd_initial: Duration::ZERO,
             cd_name: String::new(),
             show_panel: false,
             table_state,
@@ -62,6 +72,16 @@ impl AppState {
             data: crate::data::load_data(),
             items_dirty: true,
         }
+    }
+
+    pub fn switch_mode(&mut self) {
+        self.mode = self.mode.next();
+        self.is_running = false;
+        self.sw_start = None;
+        self.sw_elapsed = Duration::ZERO;
+        self.cd_target = None;
+        self.cd_remaining = self.cd_initial;
+        self.mark_dirty();
     }
 
     pub fn mark_dirty(&mut self) {

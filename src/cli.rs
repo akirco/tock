@@ -8,14 +8,6 @@ use clap::Parser;
     about = "A terminal ASCII digital clock and timer"
 )]
 pub struct Cli {
-    /// Enable stopwatch mode
-    #[arg(short = 's', long, conflicts_with = "time")]
-    pub stopwatch: bool,
-
-    /// Enable countdown mode and set duration (e.g., "10s", "5m", "1h30m")
-    #[arg(short = 't', long)]
-    pub time: Option<String>,
-
     /// Specify font name (standard, small, big, slant) or .flf file path
     #[arg(short, long)]
     pub font: Option<String>,
