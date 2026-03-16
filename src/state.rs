@@ -317,8 +317,8 @@ impl AppState {
     }
 
     pub fn update_countdown(&mut self) {
-        if self.is_running && self.mode == AppMode::Countdown {
-            if let Some(target) = self.cd_target {
+        if self.is_running && self.mode == AppMode::Countdown
+            && let Some(target) = self.cd_target {
                 let now = Instant::now();
                 if now >= target {
                     self.is_running = false;
@@ -327,7 +327,6 @@ impl AppState {
                     self.cd_remaining = target.duration_since(now);
                 }
             }
-        }
     }
 
     fn get_alarm_next_duration(&self, alarm: &models::Alarm) -> Option<Duration> {

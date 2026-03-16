@@ -45,8 +45,8 @@ pub fn run() -> Result<(), io::Error> {
         "small" => FIGlet::small().expect("Failed to load small font"),
         "big" => FIGlet::big().expect("Failed to load big font"),
         "slant" => FIGlet::slant().expect("Failed to load slant font"),
-        path => FIGlet::from_file(path).unwrap_or_else(|_| {
-            eprintln!("Warning: Failed to load font file '{}', using standard", path);
+        _ => FIGlet::from_file(&font_choice).unwrap_or_else(|_| {
+            eprintln!("Warning: Failed to load font file '{}', using standard", font_choice);
             FIGlet::standard().expect("Failed to load standard font")
         }),
     };
