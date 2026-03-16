@@ -58,7 +58,6 @@ tock --time 1h30m
 | `--panel-border` | - | Panel border color | cyan |
 | `--panel-border-sides` | - | Panel border sides (all, vertical, horizontal, top, bottom) | vertical |
 | `--panel-border-style` | - | Panel border style (plain, rounded, double, thick) | rounded |
-| `--panel-title` | - | Custom panel title | - |
 
 ### Color Options
 

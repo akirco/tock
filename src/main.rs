@@ -8,8 +8,8 @@ mod state;
 mod ui;
 mod util;
 
-use std::io;
+use color_eyre::Result;
 
-fn main() -> Result<(), io::Error> {
-    app::run()
+fn main() -> Result<()> {
+    app::run().map_err(|e| color_eyre::eyre::eyre!("{}", e))
 }
