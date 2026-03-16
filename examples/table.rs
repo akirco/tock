@@ -34,7 +34,6 @@ fn main() -> Result<()> {
         terminal.draw(|frame| render(frame, &mut table_state, &items, &mode, &input_buffer))?;
 
         if let event::Event::Key(key) = event::read()? {
-            // 忽略 Release 事件，防止 Windows/某些终端下按键输入触发两次
             if key.kind != KeyEventKind::Press {
                 continue;
             }
@@ -139,7 +138,7 @@ fn render(
     let (sel_r, sel_c) = (table_state.selected(), table_state.selected_column());
     let is_typing = matches!(mode, AppMode::Typing { .. });
 
-    // ✨ 核心技巧：构建视图行时，动态劫持正在编辑的那个单元格
+    // 构建视图行时，动态劫持正在编辑的那个单元格
     let rows: Vec<Row> = items
         .iter()
         .enumerate()

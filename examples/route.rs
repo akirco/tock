@@ -85,7 +85,6 @@ fn main() -> Result<(), Box<dyn Error>> {
 }
 
 /// 主事件循环
-/// [修复 E0277]：增加了 where 子句，确保后端的 Error 可以转换为 io::Error
 fn run_app<B: Backend>(terminal: &mut Terminal<B>, mut app: App) -> io::Result<()>
 where
     std::io::Error: From<<B as Backend>::Error>,
@@ -136,7 +135,6 @@ fn ui(f: &mut Frame, app: &App) {
         .split(f.area()); // [修复 Warning]：size() 替换为官方推荐的 area()
 
     // 渲染顶部的导航栏（类似浏览器的 Tab）
-    // [修复 E0283]：给 titles 指定明确的类型 Vec<_>
     let titles: Vec<_> = vec![Route::Home, Route::Profile, Route::Settings]
         .iter()
         .map(|r| Line::from(r.title()))
@@ -166,10 +164,6 @@ fn ui(f: &mut Frame, app: &App) {
         Route::Settings => render_settings_page(f, chunks[1]),
     }
 }
-
-// ==========================================
-// 下面是各个“子页面”的渲染函数（类似 Web 中的 Component）
-// ==========================================
 
 fn render_home_page(f: &mut Frame, area: Rect) {
     let block = Block::default()
