@@ -10,14 +10,14 @@ use figlet_rs::FIGlet;
 use ratatui::{backend::CrosstermBackend, style::Color, widgets::{Borders, TableState}, Terminal};
 use std::{io, str::FromStr, time::{Duration, Instant}};
 
-#[derive(PartialEq, Clone)]
+#[derive(PartialEq, Clone, Copy)]
 pub enum AppMode {
     Clock,
     Stopwatch,
     Countdown,
 }
 
-#[derive(PartialEq, Clone)]
+#[derive(PartialEq, Clone, Copy)]
 pub(crate) enum EditMode {
     Normal,
     Typing { is_new_row: bool },
@@ -281,7 +281,7 @@ impl AppState {
         None
     }
 
-    fn get_next_alarm_info(&self) -> Option<(String, Duration)> {
+    fn get_next_alarm_info(&self) -> Option<(&str, Duration)> {
         if self.mode != AppMode::Clock {
             return None;
         }
@@ -290,7 +290,7 @@ impl AppState {
         let current_time = now.time();
         let now_naive = now.naive_local();
 
-        let mut min_info: Option<(String, chrono::Duration)> = None;
+        let mut min_info: Option<(&str, chrono::Duration)> = None;
 
         for alarm in &self.data.alarms {
             if !alarm.enabled {
@@ -309,10 +309,10 @@ impl AppState {
                 if duration.num_seconds() > 0 {
                     if let Some((_, min_dur)) = min_info {
                         if duration < min_dur {
-                            min_info = Some((alarm.note.clone(), duration));
+                            min_info = Some((&alarm.note, duration));
                         }
                     } else {
-                        min_info = Some((alarm.note.clone(), duration));
+                        min_info = Some((&alarm.note, duration));
                     }
                 }
             }
@@ -326,20 +326,30 @@ impl AppState {
             AppMode::Clock => {
                 self.data.alarms.iter().map(|a| vec![
                     a.time.clone(),
-                    if a.enabled { "✔".to_string() } else { "✗".to_string() },
+                    String::from(if a.enabled { "✔" } else { "✗" }),
                     a.repeat.clone(),
                     a.note.clone(),
-                    if a.enabled { self.get_alarm_next_duration(a).map(format_duration_short).unwrap_or_default() } else { String::new() },
+                    if a.enabled {
+                        self.get_alarm_next_duration(a)
+                            .map(format_duration_short)
+                            .unwrap_or_default()
+                    } else {
+                        String::new()
+                    },
                 ]).collect()
             }
-            AppMode::Stopwatch => self.data.history.iter().map(|r| vec![
-                r.lap.to_string(),
-                format_duration(Duration::from_millis(r.time_millis)),
-            ]).collect(),
-            AppMode::Countdown => self.data.presets.iter().map(|p| vec![
-                p.name.clone(),
-                p.duration.to_string(),
-            ]).collect(),
+            AppMode::Stopwatch => {
+                self.data.history.iter().map(|r| vec![
+                    r.lap.to_string(),
+                    format_duration(Duration::from_millis(r.time_millis)),
+                ]).collect()
+            }
+            AppMode::Countdown => {
+                self.data.presets.iter().map(|p| vec![
+                    p.name.clone(),
+                    p.duration.to_string(),
+                ]).collect()
+            }
         }
     }
 
@@ -348,6 +358,53 @@ impl AppState {
             AppMode::Clock => vec!["Time", "Enabled", "Repeat", "Note", "Next"],
             AppMode::Stopwatch => vec!["Lap", "Time"],
             AppMode::Countdown => vec!["Name", "Seconds"],
+        }
+    }
+
+    pub fn data_len(&self) -> usize {
+        match self.mode {
+            AppMode::Clock => self.data.alarms.len(),
+            AppMode::Stopwatch => self.data.history.len(),
+            AppMode::Countdown => self.data.presets.len(),
+        }
+    }
+
+    pub fn get_cell_content(&self, row: usize, col: usize) -> String {
+        match self.mode {
+            AppMode::Clock if row < self.data.alarms.len() => {
+                let a = &self.data.alarms[row];
+                match col {
+                    0 => a.time.clone(),
+                    1 => String::from(if a.enabled { "✔" } else { "✗" }),
+                    2 => a.repeat.clone(),
+                    3 => a.note.clone(),
+                    4 => if a.enabled {
+                        self.get_alarm_next_duration(a)
+                            .map(format_duration_short)
+                            .unwrap_or_default()
+                    } else {
+                        String::new()
+                    },
+                    _ => String::new(),
+                }
+            }
+            AppMode::Stopwatch if row < self.data.history.len() => {
+                let r = &self.data.history[row];
+                match col {
+                    0 => r.lap.to_string(),
+                    1 => format_duration(Duration::from_millis(r.time_millis)),
+                    _ => String::new(),
+                }
+            }
+            AppMode::Countdown if row < self.data.presets.len() => {
+                let p = &self.data.presets[row];
+                match col {
+                    0 => p.name.clone(),
+                    1 => p.duration.to_string(),
+                    _ => String::new(),
+                }
+            }
+            _ => String::new(),
         }
     }
 }
@@ -415,31 +472,33 @@ pub fn run() -> Result<(), io::Error> {
     // --- Main Event Loop ---
     loop {
         let (time_str, subtitle_str) = app_state.tick();
-        let items = app_state.get_items();
         let headers = app_state.get_headers();
 
-        terminal.draw(|f| ui::draw(f, &mut ui::UiData {
-            font: &font,
-            time_str: &time_str,
-            subtitle_str: &subtitle_str,
-            footer_str: &footer_str,
-            bg_color,
-            clock_color,
-            show_panel: app_state.show_panel,
-            panel_ratio,
-            panel_bg,
-            panel_fg,
-            panel_border,
-            panel_border_sides,
-            panel_border_style,
-            panel_title: panel_title.as_str(),
-            mode: app_state.mode.clone(),
-            items: &items,
-            headers: &headers,
-            table_state: &mut app_state.table_state,
-            edit_mode: &app_state.edit_mode,
-            input_buffer: &app_state.input_buffer,
-        }))?;
+        {
+            let items = app_state.get_items();
+            terminal.draw(|f| ui::draw(f, &mut ui::UiData {
+                font: &font,
+                time_str: &time_str,
+                subtitle_str: &subtitle_str,
+                footer_str: &footer_str,
+                bg_color,
+                clock_color,
+                show_panel: app_state.show_panel,
+                panel_ratio,
+                panel_bg,
+                panel_fg,
+                panel_border,
+                panel_border_sides,
+                panel_border_style,
+                panel_title: panel_title.as_str(),
+                mode: app_state.mode,
+                items: &items,
+                headers: &headers,
+                table_state: &mut app_state.table_state,
+                edit_mode: &app_state.edit_mode,
+                input_buffer: &app_state.input_buffer,
+            }))?;
+        }
 
         // Polling rate set to 50ms for smooth timer UI updates
         if event::poll(Duration::from_millis(50))?
@@ -449,7 +508,7 @@ pub fn run() -> Result<(), io::Error> {
                 }
 
                 if app_state.show_panel {
-                    match app_state.edit_mode.clone() {
+                    match app_state.edit_mode {
                         EditMode::Normal => {
                             match key.code {
                                 KeyCode::Esc => break,
@@ -499,14 +558,14 @@ pub fn run() -> Result<(), io::Error> {
                                     }
                                 }
                                 KeyCode::Char('e') => {
-                                    if let (Some(r), Some(c)) = (app_state.table_state.selected(), app_state.table_state.selected_column())
-                                        && r < items.len() && c < items[r].len() {
-                                            app_state.input_buffer = items[r][c].clone();
-                                            app_state.edit_mode = EditMode::Typing { is_new_row: false };
-                                        }
+                                    if let (Some(r), Some(c)) = (app_state.table_state.selected(), app_state.table_state.selected_column()) {
+                                        app_state.input_buffer = app_state.get_cell_content(r, c);
+                                        app_state.edit_mode = EditMode::Typing { is_new_row: false };
+                                    }
                                 }
                                 KeyCode::Char('d') => {
                                     if let Some(r) = app_state.table_state.selected() {
+                                        let len_before = app_state.data_len();
                                         match app_state.mode {
                                             AppMode::Clock if r < app_state.data.alarms.len() => {
                                                 app_state.data.alarms.remove(r);
@@ -520,8 +579,9 @@ pub fn run() -> Result<(), io::Error> {
                                             _ => {}
                                         }
                                         data::save_data(&app_state.data).ok();
-                                        if r >= items.len().saturating_sub(1) && !items.is_empty() {
-                                            app_state.table_state.select(Some(items.len().saturating_sub(1)));
+                                        let len_after = app_state.data_len();
+                                        if len_after < len_before && r >= len_after.saturating_sub(1) && len_after > 0 {
+                                            app_state.table_state.select(Some(len_after - 1));
                                         }
                                     }
                                 }
@@ -540,22 +600,23 @@ pub fn run() -> Result<(), io::Error> {
                                         let is_valid = !app_state.input_buffer.trim().is_empty();
 
                                         if is_valid {
+                                            let input = std::mem::take(&mut app_state.input_buffer);
                                             match app_state.mode {
                                                 AppMode::Clock if r < app_state.data.alarms.len() => {
                                                     let alarm = &mut app_state.data.alarms[r];
                                                     match c {
-                                                        0 => alarm.time = app_state.input_buffer.clone(),
-                                                        1 => alarm.enabled = app_state.input_buffer == "✔",
-                                                        2 => alarm.repeat = app_state.input_buffer.clone(),
-                                                        3 => alarm.note = app_state.input_buffer.clone(),
+                                                        0 => alarm.time = input,
+                                                        1 => alarm.enabled = input == "✔",
+                                                        2 => alarm.repeat = input,
+                                                        3 => alarm.note = input,
                                                         _ => {}
                                                     }
                                                 }
                                                 AppMode::Countdown if r < app_state.data.presets.len() => {
                                                     let preset = &mut app_state.data.presets[r];
                                                     match c {
-                                                        0 => preset.name = app_state.input_buffer.clone(),
-                                                        1 => preset.duration = app_state.input_buffer.parse().unwrap_or(0),
+                                                        0 => preset.name = input,
+                                                        1 => preset.duration = input.parse().unwrap_or(0),
                                                         _ => {}
                                                     }
                                                 }
@@ -565,7 +626,6 @@ pub fn run() -> Result<(), io::Error> {
 
                                             if is_new_row && c < col_count - 1 {
                                                 app_state.table_state.select_column(Some(c + 1));
-                                                app_state.input_buffer.clear();
                                             } else {
                                                 app_state.edit_mode = EditMode::Normal;
                                             }
@@ -598,10 +658,10 @@ pub fn run() -> Result<(), io::Error> {
                                 KeyCode::Esc => {
                                     if is_new_row {
                                         match app_state.mode {
-                                            AppMode::Clock if app_state.data.alarms.len() > items.len() => {
+                                            AppMode::Clock if !app_state.data.alarms.is_empty() => {
                                                 app_state.data.alarms.pop();
                                             }
-                                            AppMode::Countdown if app_state.data.presets.len() > items.len() => {
+                                            AppMode::Countdown if !app_state.data.presets.is_empty() => {
                                                 app_state.data.presets.pop();
                                             }
                                             _ => {}

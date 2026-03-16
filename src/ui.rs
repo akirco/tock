@@ -23,7 +23,6 @@ pub struct UiData<'a> {
     pub panel_border_sides: Borders,
     pub panel_border_style: BorderType,
     pub panel_title: &'a str,
-    // Table data
     pub mode: AppMode,
     pub items: &'a [Vec<String>],
     pub headers: &'a [&'static str],
@@ -170,7 +169,7 @@ fn draw_table(f: &mut Frame, area: Rect, data: &mut UiData) {
                     if is_typing && Some(r_idx) == sel_r && Some(c_idx) == sel_c {
                         format!("{}█", data.input_buffer)
                     } else {
-                        s.clone()
+                        s.to_string()
                     }
                 })
                 .collect();
