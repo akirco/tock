@@ -242,6 +242,17 @@ fn handle_enter(app_state: &mut AppState, headers: &[&'static str], is_new_row: 
         let col_count = headers.len();
         let is_valid = !app_state.input_buffer.trim().is_empty();
 
+        // For new rows with empty input, use default values (already set in model)
+        // Just move to next column or exit edit mode
+        if is_new_row && !is_valid {
+            if c < col_count - 1 {
+                app_state.table_state.select_column(Some(c + 1));
+            } else {
+                app_state.edit_mode = EditMode::Normal;
+            }
+            return;
+        }
+
         if is_valid {
             let input = std::mem::take(&mut app_state.input_buffer);
             
