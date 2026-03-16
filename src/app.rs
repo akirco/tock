@@ -51,12 +51,6 @@ pub fn run() -> Result<(), io::Error> {
         }),
     };
 
-    let footer_str = format!(
-        "{} (Font: {}) | [Tab] Switch Mode | [p] Panel | [q] Exit",
-        app_state.mode.title(),
-        font_choice
-    );
-
     enable_raw_mode()?;
     let mut stdout = io::stdout();
     execute!(stdout, EnterAlternateScreen, EnableMouseCapture)?;
@@ -67,7 +61,7 @@ pub fn run() -> Result<(), io::Error> {
         &mut terminal,
         &mut app_state,
         &font,
-        &footer_str,
+        &font_choice,
         &panel_title,
         bg_color,
         clock_color,
@@ -91,7 +85,7 @@ fn main_loop(
     terminal: &mut Terminal<CrosstermBackend<io::Stdout>>,
     app_state: &mut AppState,
     font: &FIGlet,
-    footer_str: &str,
+    font_choice: &str,
     panel_title: &str,
     bg_color: Color,
     clock_color: Color,
@@ -112,11 +106,17 @@ fn main_loop(
         let input_buffer = app_state.input_buffer.clone();
         let items = app_state.get_items();
 
+        let footer_str = format!(
+            "{} (Font: {}) | [Tab] Switch Mode | [p] Panel | [q] Exit",
+            mode.title(),
+            font_choice
+        );
+
         terminal.draw(|f| crate::ui::draw(f, &mut crate::ui::UiData {
             font,
             time_str: &time_str,
             subtitle_str: &subtitle_str,
-            footer_str,
+            footer_str: &footer_str,
             bg_color,
             clock_color,
             show_panel,
