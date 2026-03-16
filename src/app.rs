@@ -94,13 +94,14 @@ fn build_config() -> Result<AppConfig, io::Error> {
     );
 
     let font = {
+        let font_choice_expanded = expand_path(&font_choice);
         let font_choice_lower = font_choice.to_lowercase();
         match font_choice_lower.as_str() {
             "standard" => FIGlet::standard().expect("Failed to load standard font"),
             "small" => FIGlet::small().expect("Failed to load small font"),
             "big" => FIGlet::big().expect("Failed to load big font"),
             "slant" => FIGlet::slant().expect("Failed to load slant font"),
-            _ => FIGlet::from_file(&font_choice).unwrap_or_else(|_| {
+            _ => FIGlet::from_file(&font_choice_expanded).unwrap_or_else(|_| {
                 eprintln!("Warning: Failed to load font file '{}', using standard", font_choice);
                 FIGlet::standard().expect("Failed to load standard font")
             }),
@@ -205,4 +206,17 @@ fn main_loop(
     }
 
     Ok(())
+}
+
+fn expand_path(path: &str) -> String {
+    if path.starts_with("~/") {
+        if let Ok(home) = std::env::var("HOME") {
+            return path.replacen("~", &home, 1);
+        }
+    } else if path.starts_with("./") {
+        if let Ok(cwd) = std::env::current_dir() {
+            return path.replacen(".", &cwd.to_string_lossy(), 1);
+        }
+    }
+    path.to_string()
 }
