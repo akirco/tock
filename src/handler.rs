@@ -214,7 +214,9 @@ fn handle_delete(app_state: &mut AppState) {
             }
             _ => return,
         }
-        data::save_data(&app_state.data).ok();
+        if let Err(e) = data::save_data(&app_state.data) {
+            eprintln!("Failed to save data: {}", e);
+        }
         app_state.mark_dirty();
         let len_after = app_state.data_len();
         if len_after < len_before && r >= len_after.saturating_sub(1) && len_after > 0 {
@@ -279,8 +281,10 @@ fn handle_enter(app_state: &mut AppState, headers: &[&'static str], is_new_row: 
                 _ => false,
             };
 
-            if saved {
-                data::save_data(&app_state.data).ok();
+                if saved {
+                if let Err(e) = data::save_data(&app_state.data) {
+                    eprintln!("Failed to save data: {}", e);
+                }
                 app_state.mark_dirty();
 
                 if is_new_row && c < col_count - 1 {
@@ -303,13 +307,17 @@ fn handle_space(app_state: &mut AppState) {
                 } else {
                     "✗".to_string()
                 };
-                data::save_data(&app_state.data).ok();
+                if let Err(e) = data::save_data(&app_state.data) {
+                    eprintln!("Failed to save data: {}", e);
+                }
                 app_state.mark_dirty();
             } else if c == 2 {
                 let next = app_state.data.alarms[r].repeat.next();
                 app_state.data.alarms[r].repeat = next;
                 app_state.input_buffer = next.to_string();
-                data::save_data(&app_state.data).ok();
+                if let Err(e) = data::save_data(&app_state.data) {
+                    eprintln!("Failed to save data: {}", e);
+                }
                 app_state.mark_dirty();
             } else {
                 app_state.input_buffer.push(' ');

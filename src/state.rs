@@ -232,7 +232,9 @@ impl AppState {
                     });
                     self.table_state.select(Some(self.data.history.len() - 1));
                     self.mark_dirty();
-                    crate::data::save_data(&self.data).ok();
+                    if let Err(e) = crate::data::save_data(&self.data) {
+                        eprintln!("Failed to save data: {}", e);
+                    }
                 }
                 self.sw_elapsed = Duration::ZERO;
                 self.sw_start = if self.is_running {

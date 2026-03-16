@@ -100,8 +100,6 @@ fn main_loop(
         let headers = app_state.get_headers();
         let mode = app_state.mode;
         let show_panel = app_state.show_panel;
-        let edit_mode = app_state.edit_mode;
-        let input_buffer = app_state.input_buffer.clone();
         let items = app_state.get_items();
 
         let footer_str = format!(
@@ -128,8 +126,8 @@ fn main_loop(
             items: &items,
             headers,
             table_state: &mut app_state.table_state,
-            edit_mode: &edit_mode,
-            input_buffer: &input_buffer,
+            edit_mode: &app_state.edit_mode,
+            input_buffer: &app_state.input_buffer,
         }))?;
 
         if event::poll(Duration::from_millis(50))?
