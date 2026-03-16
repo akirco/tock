@@ -21,30 +21,44 @@ impl SoundPlayer {
         thread::spawn(move || {
             let (_stream, stream_handle) = match OutputStream::try_default() {
                 Ok(s) => s,
-                Err(_) => return,
+                Err(e) => {
+                    eprintln!("Failed to initialize audio output: {}", e);
+                    return;
+                }
             };
             let mut current_sink: Option<Sink> = None;
 
             while let Ok(cmd) = receiver.recv() {
                 match cmd {
                     SoundCommand::Play(sound_path) => {
+
+                        // Stop current sound
                         if let Some(sink) = current_sink.take() {
                             sink.stop();
                         }
 
-                        if let Ok(sink) = Sink::try_new(&stream_handle) {
-                            if let Ok(file) = File::open(&sound_path) {
+                        // Try to open and play the file
+                        match File::open(&sound_path) {
+                            Ok(file) => {
                                 let reader = BufReader::new(file);
-                                if let Ok(source) = rodio::Decoder::new(reader) {
-                                    sink.append(source);
-                                    current_sink = Some(sink);
+                                match rodio::Decoder::new(reader) {
+                                    Ok(source) => match Sink::try_new(&stream_handle) {
+                                        Ok(sink) => {
+                                            sink.append(source);
+                                            current_sink = Some(sink);
+                                        }
+                                        Err(e) => eprintln!("Failed to create sink: {}", e),
+                                    },
+                                    Err(e) => eprintln!("Failed to decode audio: {}", e),
                                 }
                             }
+                            Err(e) => eprintln!("Sound file not found: {} ({})", sound_path, e),
                         }
                     }
                     SoundCommand::Stop => {
                         if let Some(sink) = current_sink.take() {
                             sink.stop();
+                            eprintln!("Sound stopped");
                         }
                     }
                 }
@@ -69,17 +83,21 @@ pub fn get_sound_path(name: &str) -> Option<PathBuf> {
 
     let sound_dir = config_dir.join("sounds");
 
-    if name == "default" {
-        return Some(sound_dir.join("alarm.mp3"));
+    // Check for common audio file extensions
+    for ext in &["", ".mp3", ".wav", ".ogg"] {
+        let path = sound_dir.join(format!("{}{}", name, ext));
+        if path.exists() {
+            return Some(path);
+        }
     }
 
-    let ext = if name.ends_with(".mp3") || name.ends_with(".wav") || name.ends_with(".ogg") {
-        ""
-    } else {
-        ".mp3"
-    };
+    // Also check absolute paths
+    let path = PathBuf::from(name);
+    if path.exists() {
+        return Some(path);
+    }
 
-    Some(sound_dir.join(format!("{}{}", name, ext)))
+    None
 }
 
 pub fn notification(title: &str, body: &str) {

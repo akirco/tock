@@ -28,11 +28,18 @@ pub fn run() -> Result<(), io::Error> {
     let panel_border_sides_str = cli.panel_border_sides.or(config.panel_border_sides).unwrap_or_else(|| "vertical".to_string());
     let panel_border_style_str = cli.panel_border_style.or(config.panel_border_style).unwrap_or_else(|| "rounded".to_string());
 
-    let alarm_sound_cli = cli.alarm_sound.or(config.alarm_sound);
-    let countdown_sound_cli = cli.countdown_sound.or(config.countdown_sound);
+    let alarm_sound_cli = cli.alarm_sound.or(config.alarm_sound).or(Some("alarm".to_string()));
+    let countdown_sound_cli = cli.countdown_sound.or(config.countdown_sound).or(Some("alarm".to_string()));
     
     let alarm_sound = alarm_sound_cli.and_then(|s| get_sound_path(&s));
     let countdown_sound = countdown_sound_cli.and_then(|s| get_sound_path(&s));
+
+    if alarm_sound.is_none() {
+        eprintln!("Warning: No alarm sound file found in ~/.config/clock/sounds/");
+    }
+    if countdown_sound.is_none() {
+        eprintln!("Warning: No countdown sound file found in ~/.config/clock/sounds/");
+    }
 
     let sound_player = Arc::new(SoundPlayer::new());
 

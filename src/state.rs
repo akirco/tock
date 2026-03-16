@@ -55,6 +55,7 @@ pub struct AppState {
     pub countdown_sound: Option<String>,
     pub last_alarm_triggered: Option<u64>,
     pub countdown_played: bool,
+    pub sound_start_time: Option<Instant>,
 }
 
 impl AppState {
@@ -83,6 +84,7 @@ impl AppState {
             countdown_sound,
             last_alarm_triggered: None,
             countdown_played: false,
+            sound_start_time: None,
         }
     }
 
@@ -272,28 +274,41 @@ impl AppState {
             AppMode::Clock => {
                 let now = chrono::Local::now();
                 let date_str = now.format("%A, %B %d, %Y").to_string();
-                let subtitle = if !self.data.alarms.is_empty() {
+                let alarm_info = if !self.data.alarms.is_empty() {
                     if let Some((note, d)) = self.get_next_alarm_info() {
                         if note.is_empty() {
-                            format!(
+                            Some(format!(
                                 "{} | Next: {}",
                                 date_str,
                                 super::util::format_duration_short(d)
-                            )
+                            ))
                         } else {
-                            format!(
+                            Some(format!(
                                 "{} | {} | Next: {}",
                                 date_str,
                                 note,
                                 super::util::format_duration_short(d)
-                            )
+                            ))
                         }
                     } else {
-                        date_str
+                        None
                     }
                 } else {
-                    date_str
+                    None
                 };
+                
+                let subtitle = if self.sound_start_time.is_some() {
+                    let elapsed = self.sound_start_time.unwrap().elapsed();
+                    let remaining = 60 - elapsed.as_secs();
+                    if remaining > 0 {
+                        format!("🔔 Ringing... ({}s)", remaining)
+                    } else {
+                        alarm_info.unwrap_or(date_str)
+                    }
+                } else {
+                    alarm_info.unwrap_or(date_str)
+                };
+                
                 (now.format("%H : %M : %S").to_string(), subtitle)
             }
             AppMode::Stopwatch => {
@@ -302,14 +317,23 @@ impl AppState {
                 } else {
                     self.sw_elapsed
                 };
-                let status = if self.is_running {
-                    "(Running)"
+                let status = if self.is_running { "(Running)" } else { "(Paused)" };
+                
+                let subtitle = if self.sound_start_time.is_some() {
+                    let elapsed = self.sound_start_time.unwrap().elapsed();
+                    let remaining = 60 - elapsed.as_secs();
+                    if remaining > 0 {
+                        format!("🔔 Ringing... ({}s) | STOPWATCH {}", remaining, status)
+                    } else {
+                        format!("STOPWATCH {}", status)
+                    }
                 } else {
-                    "(Paused)"
+                    format!("STOPWATCH {}", status)
                 };
+                
                 (
                     super::util::format_duration(total),
-                    format!("STOPWATCH {}", status),
+                    subtitle,
                 )
             }
             AppMode::Countdown => {
@@ -320,17 +344,34 @@ impl AppState {
                 } else {
                     "COUNTDOWN (Paused)".to_string()
                 };
-                let subtitle = if self.cd_name.is_empty() {
-                    status
+                
+                let subtitle = if self.sound_start_time.is_some() {
+                    let elapsed = self.sound_start_time.unwrap().elapsed();
+                    let remaining = 60 - elapsed.as_secs();
+                    if remaining > 0 {
+                        let base = if self.cd_name.is_empty() { status } else { format!("{} - {}", self.cd_name, status) };
+                        format!("🔔 Ringing... ({}s) | {}", remaining, base)
+                    } else {
+                        if self.cd_name.is_empty() { status } else { format!("{} - {}", self.cd_name, status) }
+                    }
                 } else {
-                    format!("{} - {}", self.cd_name, status)
+                    if self.cd_name.is_empty() { status } else { format!("{} - {}", self.cd_name, status) }
                 };
+                
                 (super::util::format_duration(self.cd_remaining), subtitle)
             }
         }
     }
 
     pub fn update_countdown(&mut self) {
+        // Check if sound should stop after 1 minute
+        if let Some(start_time) = self.sound_start_time {
+            if start_time.elapsed() > Duration::from_secs(60) {
+                self.stop_sound();
+                self.sound_start_time = None;
+            }
+        }
+        
         if self.is_running && self.mode == AppMode::Countdown
             && let Some(target) = self.cd_target {
                 let now = Instant::now();
@@ -339,81 +380,87 @@ impl AppState {
                     self.cd_remaining = Duration::ZERO;
                     if !self.countdown_played {
                         self.countdown_played = true;
+                        self.sound_start_time = Some(Instant::now());
                         if let Some(ref sound) = self.countdown_sound {
                             if let Some(ref player) = self.sound_player {
-                                player.play(&sound);
+                                player.play(sound);
                             }
                         }
-                        notification("Countdown Finished", &self.cd_name);
+                        if !self.cd_name.is_empty() {
+                            notification("Countdown Finished", &self.cd_name);
+                        }
                     }
                 } else {
                     self.cd_remaining = target.duration_since(now);
                 }
             }
     }
-    
+
     pub fn check_alarms(&mut self) {
         if self.mode != AppMode::Clock {
             return;
         }
-        
+
         let now = chrono::Local::now();
         let current_time = now.time();
         let today = now.date_naive();
-        
+
         for (idx, alarm) in self.data.alarms.iter().enumerate() {
             if !alarm.enabled {
                 continue;
             }
-            
-            if let Ok(alarm_time) = chrono::NaiveTime::parse_from_str(&alarm.time.format("%H:%M:%S").to_string(), "%H:%M:%S") {
-                let alarm_datetime = today.and_time(alarm_time);
-                
-                if alarm_datetime.time() <= current_time {
-                    continue;
-                }
-                
-                let time_diff = alarm_datetime.signed_duration_since(now.naive_local());
-                let seconds_until = time_diff.num_seconds();
-                
-                if seconds_until > 0 && seconds_until <= 1 {
-                    let alarm_id = idx as u64;
-                    if self.last_alarm_triggered != Some(alarm_id) {
-                        self.last_alarm_triggered = Some(alarm_id);
-                        if let Some(ref sound) = self.alarm_sound {
-                            if let Some(ref player) = self.sound_player {
-                                player.play(&sound);
-                            }
+
+            let alarm_datetime = today.and_time(alarm.time);
+
+            if alarm_datetime.time() <= current_time {
+                continue;
+            }
+
+            let time_diff = alarm_datetime.signed_duration_since(now.naive_local());
+            let seconds_until = time_diff.num_seconds();
+
+            // Window of 3 seconds to catch the alarm
+            if seconds_until >= 0 && seconds_until <= 3 {
+                let alarm_id = idx as u64;
+                if self.last_alarm_triggered != Some(alarm_id) {
+                    self.last_alarm_triggered = Some(alarm_id);
+                    self.sound_start_time = Some(Instant::now());
+                    if let Some(ref sound) = self.alarm_sound {
+                        if let Some(ref player) = self.sound_player {
+                            player.play(sound);
                         }
+                    }
+                    if !alarm.note.is_empty() {
                         notification("Alarm", &alarm.note);
                     }
                 }
             }
         }
-        
+
+        // Reset triggered state if no alarms about to go off
         let now2 = chrono::Local::now();
         let current_time2 = now2.time();
-        let mut triggered_today = false;
+        let mut about_to_trigger = false;
         for alarm in &self.data.alarms {
             if alarm.enabled {
-                if let Ok(alarm_time) = chrono::NaiveTime::parse_from_str(&alarm.time.format("%H:%M:%S").to_string(), "%H:%M:%S") {
-                    let diff = alarm_time.signed_duration_since(current_time2);
-                    if diff.num_seconds() > 0 && diff.num_seconds() <= 1 {
-                        triggered_today = true;
-                        break;
-                    }
+                let alarm_datetime = today.and_time(alarm.time);
+                let diff = alarm_datetime.time().signed_duration_since(current_time2);
+                if diff.num_seconds() >= 0 && diff.num_seconds() <= 3 {
+                    about_to_trigger = true;
+                    break;
                 }
             }
         }
-        if !triggered_today {
+        if !about_to_trigger {
             self.last_alarm_triggered = None;
         }
     }
-    
-    pub fn stop_sound(&self) {
+
+    pub fn stop_sound(&mut self) {
         if let Some(ref player) = self.sound_player {
             player.stop();
         }
+        self.sound_start_time = None;
     }
 
     fn get_alarm_next_duration(&self, alarm: &models::Alarm) -> Option<Duration> {

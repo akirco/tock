@@ -37,6 +37,10 @@ fn handle_normal_mode(
         KeyCode::Esc => Action::Quit,
         KeyCode::Char('c') if modifiers.contains(KeyModifiers::CONTROL) => Action::Quit,
         KeyCode::Enter => {
+            // Stop any playing sound when pressing Enter
+            app_state.stop_sound();
+            app_state.countdown_played = false;
+            
             if let AppMode::Countdown = app_state.mode
                 && let Some(r) = app_state.table_state.selected()
                     && r < app_state.data.presets.len() {
@@ -230,6 +234,10 @@ fn handle_delete(app_state: &mut AppState) {
 }
 
 fn handle_enter(app_state: &mut AppState, headers: &[&'static str], is_new_row: bool) {
+    // Stop any playing sound when pressing Enter
+    app_state.stop_sound();
+    app_state.countdown_played = false;
+    
     if let (Some(r), Some(c)) = (app_state.table_state.selected(), app_state.table_state.selected_column()) {
         let col_count = headers.len();
         let is_valid = !app_state.input_buffer.trim().is_empty();
