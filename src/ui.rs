@@ -1,3 +1,4 @@
+use crate::state::{AppMode, EditMode};
 use figlet_rs::FIGlet;
 use ratatui::{
     layout::{Alignment, Constraint, Direction, Layout, Rect},
@@ -5,8 +6,6 @@ use ratatui::{
     widgets::{Block, BorderType, Borders, Paragraph, Row, Table, TableState},
     Frame,
 };
-
-use crate::app::{AppMode, EditMode};
 
 pub struct UiData<'a> {
     pub font: &'a FIGlet,
