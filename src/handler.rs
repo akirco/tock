@@ -160,10 +160,14 @@ fn handle_panel_closed(
         KeyCode::Char('q') | KeyCode::Esc => Action::Quit,
         KeyCode::Char('c') if modifiers.contains(KeyModifiers::CONTROL) => Action::Quit,
         KeyCode::Char(' ') => {
+            app_state.stop_sound();
+            app_state.countdown_played = false;
             app_state.toggle_pause();
             Action::Continue
         }
         KeyCode::Char('r') | KeyCode::Char('R') => {
+            app_state.stop_sound();
+            app_state.countdown_played = false;
             app_state.reset();
             Action::Continue
         }

@@ -1,5 +1,6 @@
 use crate::cli::Cli;
 use crate::config::load_config;
+use crate::sound::{get_sound_path, SoundPlayer};
 use crate::state::AppState;
 use crate::util::{parse_border_sides, parse_border_style};
 use clap::Parser;
@@ -10,7 +11,7 @@ use crossterm::{
 };
 use figlet_rs::FIGlet;
 use ratatui::{backend::CrosstermBackend, style::Color, Terminal};
-use std::{io, str::FromStr, time::Duration};
+use std::{io, str::FromStr, sync::Arc, time::Duration};
 
 pub fn run() -> Result<(), io::Error> {
     let cli = Cli::parse();
@@ -27,6 +28,14 @@ pub fn run() -> Result<(), io::Error> {
     let panel_border_sides_str = cli.panel_border_sides.or(config.panel_border_sides).unwrap_or_else(|| "vertical".to_string());
     let panel_border_style_str = cli.panel_border_style.or(config.panel_border_style).unwrap_or_else(|| "rounded".to_string());
 
+    let alarm_sound_cli = cli.alarm_sound.or(config.alarm_sound);
+    let countdown_sound_cli = cli.countdown_sound.or(config.countdown_sound);
+    
+    let alarm_sound = alarm_sound_cli.and_then(|s| get_sound_path(&s));
+    let countdown_sound = countdown_sound_cli.and_then(|s| get_sound_path(&s));
+
+    let sound_player = Arc::new(SoundPlayer::new());
+
     let bg_color = Color::from_str(&bg_str).unwrap_or(Color::Reset);
     let clock_color = Color::from_str(&fg_str).unwrap_or(Color::Cyan);
     let panel_bg = Color::from_str(&panel_bg_str).unwrap_or(Color::Reset);
@@ -35,7 +44,11 @@ pub fn run() -> Result<(), io::Error> {
     let panel_border_sides = parse_border_sides(&panel_border_sides_str);
     let panel_border_style = parse_border_style(&panel_border_style_str);
 
-    let mut app_state = AppState::new();
+    let mut app_state = AppState::new(
+        Some(sound_player),
+        alarm_sound.map(|p| p.to_string_lossy().to_string()),
+        countdown_sound.map(|p| p.to_string_lossy().to_string()),
+    );
 
     let font = {
         let font_choice_lower = font_choice.to_lowercase();
@@ -96,6 +109,7 @@ fn main_loop(
 ) -> Result<(), io::Error> {
     loop {
         app_state.update_countdown();
+        app_state.check_alarms();
         let (time_str, subtitle_str) = app_state.tick();
         let headers = app_state.get_headers();
         let mode = app_state.mode;
@@ -103,7 +117,7 @@ fn main_loop(
         let items = app_state.get_items();
 
         let footer_str = format!(
-            "{} (Font: {}) | [Tab] Switch Mode | [p] Panel | [q] Exit",
+            "{} (Font: {}) | [Tab] Switch Mode | [p] Panel | [Space] Stop Alarm | [q] Exit",
             mode.title(),
             font_choice
         );

@@ -43,4 +43,12 @@ pub struct Cli {
     /// Panel border style: plain, rounded, double, thick (default: plain)
     #[arg(long)]
     pub panel_border_style: Option<String>,
+
+    /// Alarm sound file (default: alarm.mp3 in config/sounds)
+    #[arg(long)]
+    pub alarm_sound: Option<String>,
+
+    /// Countdown end sound file (default: alarm.mp3 in config/sounds)
+    #[arg(long)]
+    pub countdown_sound: Option<String>,
 }

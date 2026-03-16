@@ -27,3 +27,11 @@
 
 # Panel border style: plain, rounded, double, thick
 # panel_border_style = "rounded"
+
+# Alarm sound file (place in ~/.config/clock/sounds/)
+# Default: alarm.mp3
+# alarm_sound = "alarm"
+
+# Countdown end sound file
+# Default: alarm.mp3
+# countdown_sound = "alarm"

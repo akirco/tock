@@ -4,6 +4,7 @@ mod config;
 mod data;
 mod handler;
 mod models;
+mod sound;
 mod state;
 mod ui;
 mod util;

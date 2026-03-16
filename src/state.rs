@@ -1,5 +1,7 @@
 use crate::models;
+use crate::sound::{notification, SoundPlayer};
 use ratatui::widgets::TableState;
+use std::sync::Arc;
 use std::time::{Duration, Instant};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -48,10 +50,15 @@ pub struct AppState {
     pub input_buffer: String,
     pub data: models::AppData,
     pub items_dirty: bool,
+    pub sound_player: Option<Arc<SoundPlayer>>,
+    pub alarm_sound: Option<String>,
+    pub countdown_sound: Option<String>,
+    pub last_alarm_triggered: Option<u64>,
+    pub countdown_played: bool,
 }
 
 impl AppState {
-    pub fn new() -> Self {
+    pub fn new(sound_player: Option<Arc<SoundPlayer>>, alarm_sound: Option<String>, countdown_sound: Option<String>) -> Self {
         let mut table_state = TableState::default();
         table_state.select_first();
         table_state.select_first_column();
@@ -71,6 +78,11 @@ impl AppState {
             input_buffer: String::new(),
             data: crate::data::load_data(),
             items_dirty: true,
+            sound_player,
+            alarm_sound,
+            countdown_sound,
+            last_alarm_triggered: None,
+            countdown_played: false,
         }
     }
 
@@ -325,10 +337,83 @@ impl AppState {
                 if now >= target {
                     self.is_running = false;
                     self.cd_remaining = Duration::ZERO;
+                    if !self.countdown_played {
+                        self.countdown_played = true;
+                        if let Some(ref sound) = self.countdown_sound {
+                            if let Some(ref player) = self.sound_player {
+                                player.play(&sound);
+                            }
+                        }
+                        notification("Countdown Finished", &self.cd_name);
+                    }
                 } else {
                     self.cd_remaining = target.duration_since(now);
                 }
             }
+    }
+    
+    pub fn check_alarms(&mut self) {
+        if self.mode != AppMode::Clock {
+            return;
+        }
+        
+        let now = chrono::Local::now();
+        let current_time = now.time();
+        let today = now.date_naive();
+        
+        for (idx, alarm) in self.data.alarms.iter().enumerate() {
+            if !alarm.enabled {
+                continue;
+            }
+            
+            if let Ok(alarm_time) = chrono::NaiveTime::parse_from_str(&alarm.time.format("%H:%M:%S").to_string(), "%H:%M:%S") {
+                let alarm_datetime = today.and_time(alarm_time);
+                
+                if alarm_datetime.time() <= current_time {
+                    continue;
+                }
+                
+                let time_diff = alarm_datetime.signed_duration_since(now.naive_local());
+                let seconds_until = time_diff.num_seconds();
+                
+                if seconds_until > 0 && seconds_until <= 1 {
+                    let alarm_id = idx as u64;
+                    if self.last_alarm_triggered != Some(alarm_id) {
+                        self.last_alarm_triggered = Some(alarm_id);
+                        if let Some(ref sound) = self.alarm_sound {
+                            if let Some(ref player) = self.sound_player {
+                                player.play(&sound);
+                            }
+                        }
+                        notification("Alarm", &alarm.note);
+                    }
+                }
+            }
+        }
+        
+        let now2 = chrono::Local::now();
+        let current_time2 = now2.time();
+        let mut triggered_today = false;
+        for alarm in &self.data.alarms {
+            if alarm.enabled {
+                if let Ok(alarm_time) = chrono::NaiveTime::parse_from_str(&alarm.time.format("%H:%M:%S").to_string(), "%H:%M:%S") {
+                    let diff = alarm_time.signed_duration_since(current_time2);
+                    if diff.num_seconds() > 0 && diff.num_seconds() <= 1 {
+                        triggered_today = true;
+                        break;
+                    }
+                }
+            }
+        }
+        if !triggered_today {
+            self.last_alarm_triggered = None;
+        }
+    }
+    
+    pub fn stop_sound(&self) {
+        if let Some(ref player) = self.sound_player {
+            player.stop();
+        }
     }
 
     fn get_alarm_next_duration(&self, alarm: &models::Alarm) -> Option<Duration> {
