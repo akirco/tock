@@ -2,6 +2,10 @@
 
 A terminal ASCII clock application with stopwatch and countdown timer functionality, built with Rust and ratatui.
 
+## BUG
+
+- fg优先级
+
 ## Features
 
 - **Clock Mode**: Display current time with ASCII art, supports alarms with customizable time, repeat pattern, and notes
@@ -30,6 +34,11 @@ cargo build --release
 ```bash
 tock
 ```
+
+## figlet Font
+
+[fonts](https://github.com/hIMEI29A/FigletFonts)
+
 
 ~~ ### Stopwatch Mode ~~
 ```bash
