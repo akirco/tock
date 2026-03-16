@@ -16,7 +16,6 @@ directories = "6.0.0"
 color-eyre = "0.6.5"
 colorgrad = {version="0.8.0",features=["preset"]}
 rodio = "0.19"
-notify-rust = "4.10"
 
 [profile.release]
 lto = "thin"

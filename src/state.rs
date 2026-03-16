@@ -1,5 +1,5 @@
 use crate::models;
-use crate::sound::{notification, SoundPlayer};
+use crate::sound::SoundPlayer;
 use ratatui::widgets::TableState;
 use std::sync::Arc;
 use std::time::{Duration, Instant};
@@ -410,9 +410,6 @@ impl AppState {
                             && let Some(ref player) = self.sound_player {
                                 player.play(sound);
                             }
-                        if !self.cd_name.is_empty() {
-                            notification("Countdown Finished", &self.cd_name);
-                        }
                     }
                 } else {
                     self.cd_remaining = target.duration_since(now);
@@ -455,9 +452,6 @@ impl AppState {
                         && let Some(ref player) = self.sound_player {
                             player.play(sound);
                         }
-                    if !alarm.note.is_empty() {
-                        notification("Alarm", &alarm.note);
-                    }
                 }
             }
         }

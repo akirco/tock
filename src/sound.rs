@@ -31,7 +31,6 @@ impl SoundPlayer {
             while let Ok(cmd) = receiver.recv() {
                 match cmd {
                     SoundCommand::Play(sound_path) => {
-
                         // Stop current sound
                         if let Some(sink) = current_sink.take() {
                             sink.stop();
@@ -98,14 +97,4 @@ pub fn get_sound_path(name: &str) -> Option<PathBuf> {
     }
 
     None
-}
-
-pub fn notification(title: &str, body: &str) {
-    use notify_rust::Notification;
-
-    let _ = Notification::new()
-        .summary("tock")
-        .subtitle(title)
-        .body(body)
-        .show();
 }
