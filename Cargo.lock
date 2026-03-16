@@ -562,6 +562,7 @@ dependencies = [
  "num-traits",
  "phf 0.13.1",
  "serde",
+ "uncased",
 ]
 
 [[package]]

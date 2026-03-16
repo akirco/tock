@@ -12,7 +12,7 @@ use crossterm::{
 };
 use figlet_rs::FIGlet;
 use ratatui::{backend::CrosstermBackend, style::Color, Terminal};
-use std::{io, str::FromStr, sync::Arc, time::Duration};
+use std::{collections::HashMap, io, str::FromStr, sync::Arc, time::Duration};
 
 pub fn run() -> Result<(), io::Error> {
     let mut config = build_config()?;
@@ -58,8 +58,10 @@ fn build_config() -> Result<AppConfig, io::Error> {
     let panel_border_sides_str = cli.panel_border_sides.or(config.panel_border_sides).unwrap_or_else(|| "vertical".to_string());
     let panel_border_style_str = cli.panel_border_style.or(config.panel_border_style).unwrap_or_else(|| "rounded".to_string());
 
-    let custom_colors = config.color.as_ref().map(|c| c.custom.clone()).unwrap_or_default();
-    let gradient = cli.color.as_ref().and_then(|c| parse_color(c, &custom_colors));
+    let gradient = cli.color
+        .map(|c| c.join(","))
+        .or(config.color)
+        .and_then(|c| parse_color(&c, &HashMap::new()));
 
     let alarm_sound_cli = cli.alarm_sound.or(config.alarm_sound).or(Some("alarm".to_string()));
     let countdown_sound_cli = cli.countdown_sound.or(config.countdown_sound).or(Some("alarm".to_string()));

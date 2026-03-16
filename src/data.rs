@@ -3,7 +3,7 @@ use directories::ProjectDirs;
 use std::fs;
 
 fn get_data_path() -> Option<std::path::PathBuf> {
-    ProjectDirs::from("", "", "clock").map(|proj_dirs| proj_dirs.config_dir().join("data.json"))
+    ProjectDirs::from("", "", "tock").map(|proj_dirs| proj_dirs.config_dir().join("data.json"))
 }
 
 pub fn load_data() -> AppData {

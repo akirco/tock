@@ -77,7 +77,7 @@ impl SoundPlayer {
 }
 
 pub fn get_sound_path(name: &str) -> Option<PathBuf> {
-    let config_dir = directories::ProjectDirs::from("", "", "clock")
+    let config_dir = directories::ProjectDirs::from("", "", "tock")
         .map(|dirs| dirs.config_dir().to_path_buf())?;
 
     let sound_dir = config_dir.join("sounds");

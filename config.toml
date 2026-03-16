@@ -1,5 +1,5 @@
 # Tock Configuration File
-# Location: ~/.config/clock/config.toml
+# Location: ~/.config/tock/config.toml
 
 # Font: standard, small, big, slant, or path to .flf file
 # font = "standard"
@@ -9,6 +9,14 @@
 
 # Clock text color (e.g., cyan, "#00ff00", white)
 # fg = "cyan"
+
+# Subtitle text color (e.g., cyan, "#00ff00", white)
+# subtitle_fg = "cyan"
+
+# Clock color gradient
+# Presets: rainbow, sinebow, viridis, magma, plasma, inferno, turbo, spectral, blues, greens, reds, oranges, purples, warm, cool
+# Custom: comma-separated colors (e.g., "red,blue,green" or "#ff0000,#00ff00")
+# color = "rainbow"
 
 # Panel height ratio when visible (0-100)
 # panel_ratio = 50
@@ -28,10 +36,13 @@
 # Panel border style: plain, rounded, double, thick
 # panel_border_style = "rounded"
 
-# Alarm sound file (place in ~/.config/clock/sounds/)
+# Alarm sound file (place in ~/.config/tock/sounds/)
 # Default: alarm.mp3
 # alarm_sound = "alarm"
 
 # Countdown end sound file
 # Default: alarm.mp3
 # countdown_sound = "alarm"
+
+# Hide help text in footer and panel
+# hidden_help = false

@@ -57,8 +57,8 @@ pub struct Cli {
     pub countdown_sound: Option<String>,
 
     /// Clock color gradient: preset name (rainbow, sinebow, viridis, etc.) or custom colors (red,blue,green)
-    #[arg(long)]
-    pub color: Option<String>,
+    #[arg(long, num_args(1..), value_delimiter(','))]
+    pub color: Option<Vec<String>>,
 
     /// Hide help text in footer and panel
     #[arg(long, action = clap::ArgAction::SetTrue)]

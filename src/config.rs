@@ -1,6 +1,5 @@
 use directories::ProjectDirs;
 use serde::Deserialize;
-use std::collections::HashMap;
 use std::fs;
 
 #[derive(Deserialize, Debug, Default)]
@@ -18,17 +17,11 @@ pub struct Config {
     pub panel_border_style: Option<String>,
     pub alarm_sound: Option<String>,
     pub countdown_sound: Option<String>,
-    pub color: Option<ColorConfig>,
-}
-
-#[derive(Deserialize, Debug, Default)]
-pub struct ColorConfig {
-    #[serde(default)]
-    pub custom: HashMap<String, String>,
+    pub color: Option<String>,
 }
 
 pub fn load_config() -> Config {
-    if let Some(proj_dirs) = ProjectDirs::from("", "", "clock") {
+    if let Some(proj_dirs) = ProjectDirs::from("", "", "tock") {
         let config_file = proj_dirs.config_dir().join("config.toml");
         if config_file.exists()
             && let Ok(contents) = fs::read_to_string(config_file)
