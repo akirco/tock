@@ -20,6 +20,10 @@ pub struct Cli {
     #[arg(short = 'c', long)]
     pub fg: Option<String>,
 
+    /// Subtitle text color (e.g., cyan, "#00ff00", white)
+    #[arg(long)]
+    pub subtitle_fg: Option<String>,
+
     /// Panel height ratio when visible (0-100, default 50)
     #[arg(short = 'r', long)]
     pub panel_ratio: Option<u8>,

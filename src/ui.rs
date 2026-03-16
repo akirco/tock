@@ -16,6 +16,7 @@ pub struct UiData<'a> {
     pub footer_str: &'a str,
     pub bg_color: Color,
     pub clock_color: Color,
+    pub subtitle_color: Color,
     pub gradient: Option<GradientBox>,
     pub show_panel: bool,
     pub panel_ratio: u8,
@@ -136,7 +137,7 @@ pub fn draw(f: &mut Frame, data: &mut UiData) {
         for line in data.subtitle_str.lines() {
             lines.push(Line::from(Span::styled(
                 line,
-                Style::default().fg(data.clock_color),
+                Style::default().fg(data.subtitle_color),
             )));
         }
 
@@ -144,10 +145,23 @@ pub fn draw(f: &mut Frame, data: &mut UiData) {
 
         f.render_widget(center_paragraph, content_area);
     } else {
-        let center_text = format!("{}\n{}", ascii_art, data.subtitle_str);
-        let center_paragraph = Paragraph::new(center_text)
-            .style(Style::default().fg(data.clock_color).bg(data.bg_color))
-            .alignment(Alignment::Center);
+        let mut lines = Vec::new();
+
+        for line in ascii_art.lines() {
+            lines.push(Line::from(Span::styled(
+                line,
+                Style::default().fg(data.clock_color),
+            )));
+        }
+
+        for line in data.subtitle_str.lines() {
+            lines.push(Line::from(Span::styled(
+                line,
+                Style::default().fg(data.subtitle_color),
+            )));
+        }
+
+        let center_paragraph = Paragraph::new(Text::from(lines)).alignment(Alignment::Center);
 
         f.render_widget(center_paragraph, content_area);
     }

@@ -21,6 +21,7 @@ pub fn run() -> Result<(), io::Error> {
     let font_choice = cli.font.or(config.font).unwrap_or_else(|| "standard".to_string());
     let bg_str = cli.bg.or(config.bg).unwrap_or_else(|| "reset".to_string());
     let fg_str = cli.fg.or(config.fg).unwrap_or_else(|| "cyan".to_string());
+    let subtitle_fg_str = cli.subtitle_fg.or(config.subtitle_fg).unwrap_or_else(|| "cyan".to_string());
     let panel_ratio = cli.panel_ratio.or(config.panel_ratio).unwrap_or(50);
 
     let panel_bg_str = cli.panel_bg.or(config.panel_bg).unwrap_or_else(|| "reset".to_string());
@@ -49,6 +50,7 @@ pub fn run() -> Result<(), io::Error> {
 
     let bg_color = Color::from_str(&bg_str).unwrap_or(Color::Reset);
     let clock_color = Color::from_str(&fg_str).unwrap_or(Color::Cyan);
+    let subtitle_color = Color::from_str(&subtitle_fg_str).unwrap_or(Color::Cyan);
     let panel_bg = Color::from_str(&panel_bg_str).unwrap_or(Color::Reset);
     let panel_fg = Color::from_str(&panel_fg_str).unwrap_or(Color::Cyan);
     let panel_border = Color::from_str(&panel_border_str).unwrap_or(Color::Cyan);
@@ -88,6 +90,7 @@ pub fn run() -> Result<(), io::Error> {
         &font_choice,
         bg_color,
         clock_color,
+        subtitle_color,
         gradient,
         panel_ratio,
         panel_bg,
@@ -112,6 +115,7 @@ fn main_loop(
     font_choice: &str,
     bg_color: Color,
     clock_color: Color,
+    subtitle_color: Color,
     gradient: Option<GradientBox>,
     panel_ratio: u8,
     panel_bg: Color,
@@ -142,6 +146,7 @@ fn main_loop(
             footer_str: &footer_str,
             bg_color,
             clock_color,
+            subtitle_color,
             gradient: gradient.clone(),
             show_panel,
             panel_ratio,
