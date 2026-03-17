@@ -4,7 +4,10 @@ A terminal ASCII clock application with stopwatch and countdown timer functional
 
 ## BUG
 
-- fg优先级
+- [ ] fg优先级
+- [ ] 迁移[bit font](https://github.com/akirco/ansifont)到rust,复用到该程序，重新设计配置
+- [ ] 新增aur安装
+- [ ] 添加CI,CD,RELEASES
 
 ## Features
 
