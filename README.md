@@ -2,6 +2,12 @@
 
 A terminal ASCII clock application with stopwatch and countdown timer functionality, built with Rust and ratatui.
 
+## Preview
+
+![](./docs/1.png)
+
+![](./docs/2.png)
+
 ## TODO
 
 - [ ] fg优先级
